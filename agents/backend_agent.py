@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .base_agent import BaseAgent
 from skills.backend_skills import BackendSkill
+from skills.backend_skills_enhanced import EnhancedBackendSkill
 
 
 class BackendAgent(BaseAgent):
@@ -232,10 +233,145 @@ class BackendAgent(BaseAgent):
 
     def _generate_subtask_code(self, project_folder: Path, subtask: Dict[str, Any],
                                project_name: str, base_package: str) -> None:
-        """Generate code specific to each business process."""
-        # Get business process from subtask dict
+        """Generate code specific to each business process based on README specifications."""
+        # Find corresponding subtask README if it exists
         business_process = subtask.get("business_process", "")
 
+        # Try to find the README file for this subtask
+        readme_path = self._find_subtask_readme(business_process, subtask.get("title", ""))
+
+        if readme_path and Path(readme_path).exists():
+            # Parse README specifications
+            spec = EnhancedBackendSkill.parse_readme(readme_path)
+
+            if spec and spec.get("title"):
+                self._generate_code_from_spec(project_folder, base_package, spec)
+            else:
+                # Fallback to process-based code generation
+                self._generate_code_by_business_process(project_folder, base_package, business_process)
+        else:
+            # Fallback to process-based code generation
+            self._generate_code_by_business_process(project_folder, base_package, business_process)
+
+    def _find_subtask_readme(self, business_process: str, subtask_title: str) -> str:
+        """Find README file for a subtask directory."""
+        # Look for README in subtask directories
+        subtasks_base = Path("subtasks")
+        if subtasks_base.exists():
+            for domain in ["backend", "frontend", "database"]:
+                domain_path = subtasks_base / domain
+                if domain_path.exists():
+                    # Search subdirectories for matching README
+                    for subtask_dir in domain_path.iterdir():
+                        if subtask_dir.is_dir():
+                            readme = subtask_dir / "README.md"
+                            if readme.exists():
+                                # Check if this README matches our business process
+                                with open(readme, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                    if business_process.lower() in content.lower():
+                                        return str(readme)
+        return ""
+
+    def _generate_code_from_spec(self, project_folder: Path, base_package: str, spec: Dict[str, Any]) -> None:
+        """Generate backend code based on parsed README specification."""
+        # Generate entities based on database schemas mentioned
+        tables = spec.get("tables", [])
+
+        entity_dir = project_folder / f"src/main/java/com/example/{base_package}/entity"
+        entity_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate User entity if tables mention users
+        if any("user" in table.lower() for table in tables):
+            user_entity_path = entity_dir / "User.java"
+            if not user_entity_path.exists():
+                user_entity_path.write_text(
+                    EnhancedBackendSkill.generate_user_entity_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(user_entity_path)
+                self.log_action("Generated entity: User (from spec)")
+
+        # Generate AuditLog entity if audit tables mentioned
+        if any("audit" in table.lower() for table in tables):
+            audit_entity_path = entity_dir / "AuditLog.java"
+            if not audit_entity_path.exists():
+                audit_entity_path.write_text(
+                    BackendSkill.generate_entity_template("audit"),
+                    encoding="utf-8"
+                )
+                self.created_files.append(audit_entity_path)
+                self.log_action("Generated entity: AuditLog (from spec)")
+
+        # Generate repositories
+        repo_dir = project_folder / f"src/main/java/com/example/{base_package}/repository"
+        repo_dir.mkdir(parents=True, exist_ok=True)
+
+        if any("user" in table.lower() for table in tables):
+            user_repo_path = repo_dir / "UserRepository.java"
+            if not user_repo_path.exists():
+                user_repo_path.write_text(
+                    BackendSkill.generate_repository_template("user"),
+                    encoding="utf-8"
+                )
+                self.created_files.append(user_repo_path)
+                self.log_action("Generated repository: UserRepository (from spec)")
+
+        # Generate services based on spec
+        service_dir = project_folder / f"src/main/java/com/example/{base_package}/service"
+        service_dir.mkdir(parents=True, exist_ok=True)
+
+        if any("user" in table.lower() for table in tables):
+            user_service_path = service_dir / "UserService.java"
+            if not user_service_path.exists():
+                user_service_path.write_text(
+                    EnhancedBackendSkill.generate_user_service_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(user_service_path)
+                self.log_action("Generated service: UserService (from spec)")
+
+        if any("audit" in table.lower() for table in tables):
+            audit_service_path = service_dir / "AuditService.java"
+            if not audit_service_path.exists():
+                audit_service_path.write_text(
+                    EnhancedBackendSkill.generate_audit_service_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(audit_service_path)
+                self.log_action("Generated service: AuditService (from spec)")
+
+        # Generate controllers based on APIs
+        controller_dir = project_folder / f"src/main/java/com/example/{base_package}/controller"
+        controller_dir.mkdir(parents=True, exist_ok=True)
+
+        apis = spec.get("apis", [])
+        if any("/users" in api for api in apis):
+            user_controller_path = controller_dir / "UserController.java"
+            if not user_controller_path.exists():
+                user_controller_path.write_text(
+                    EnhancedBackendSkill.generate_user_controller_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(user_controller_path)
+                self.log_action("Generated controller: UserController (from spec)")
+
+        # Generate security utilities if authentication mentioned
+        if any("/auth" in api for api in apis) or any("auth" in spec.get("description", "").lower()):
+            util_dir = project_folder / f"src/main/java/com/example/{base_package}/security"
+            util_dir.mkdir(parents=True, exist_ok=True)
+
+            jwt_util_path = util_dir / "JwtTokenProvider.java"
+            if not jwt_util_path.exists():
+                jwt_util_path.write_text(
+                    EnhancedBackendSkill.generate_jwt_util_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(jwt_util_path)
+                self.log_action("Generated security: JwtTokenProvider (from spec)")
+
+    def _generate_code_by_business_process(self, project_folder: Path, base_package: str, business_process: str) -> None:
+        """Fallback: Generate code based on business process type."""
         if business_process == "User Management":
             self._generate_user_management_code(project_folder, base_package)
         elif business_process == "Authentication & Authorization":

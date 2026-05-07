@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .base_agent import BaseAgent
 from skills.frontend_skills import FrontendSkill
+from skills.frontend_skills_enhanced import EnhancedFrontendSkill
 
 
 class FrontendAgent(BaseAgent):
@@ -239,10 +240,112 @@ class FrontendAgent(BaseAgent):
 
     def _generate_subtask_code(self, project_folder: Path, subtask: Dict[str, Any],
                                project_name: str) -> None:
-        """Generate code specific to each business process."""
-        # Get business process from subtask dict
+        """Generate code specific to each business process based on README specifications."""
+        # Find corresponding subtask README if it exists
         business_process = subtask.get("business_process", "")
 
+        # Try to find the README file for this subtask
+        readme_path = self._find_subtask_readme(business_process, subtask.get("title", ""))
+
+        if readme_path and Path(readme_path).exists():
+            # Parse README specifications
+            spec = EnhancedFrontendSkill.parse_readme(readme_path)
+
+            if spec and spec.get("title"):
+                self._generate_code_from_spec(project_folder, spec)
+            else:
+                # Fallback to process-based code generation
+                self._generate_code_by_business_process(project_folder, business_process)
+        else:
+            # Fallback to process-based code generation
+            self._generate_code_by_business_process(project_folder, business_process)
+
+    def _find_subtask_readme(self, business_process: str, subtask_title: str) -> str:
+        """Find README file for a subtask directory."""
+        # Look for README in subtask directories
+        subtasks_base = Path("subtasks")
+        if subtasks_base.exists():
+            for domain in ["backend", "frontend", "database"]:
+                domain_path = subtasks_base / domain
+                if domain_path.exists():
+                    # Search subdirectories for matching README
+                    for subtask_dir in domain_path.iterdir():
+                        if subtask_dir.is_dir():
+                            readme = subtask_dir / "README.md"
+                            if readme.exists():
+                                # Check if this README matches our business process
+                                with open(readme, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                    if business_process.lower() in content.lower():
+                                        return str(readme)
+        return ""
+
+    def _generate_code_from_spec(self, project_folder: Path, spec: Dict[str, Any]) -> None:
+        """Generate frontend code based on parsed README specification."""
+        components_dir = project_folder / "src/components"
+        components_dir.mkdir(parents=True, exist_ok=True)
+
+        pages_dir = project_folder / "src/pages"
+        pages_dir.mkdir(parents=True, exist_ok=True)
+
+        services_dir = project_folder / "src/services"
+        services_dir.mkdir(parents=True, exist_ok=True)
+
+        # Generate LoginForm if authentication mentioned
+        if any("/login" in api.lower() or "auth" in api.lower() for api in spec.get("apis", [])):
+            login_form_path = components_dir / "LoginForm.tsx"
+            if not login_form_path.exists():
+                login_form_path.write_text(
+                    EnhancedFrontendSkill.generate_login_component_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(login_form_path)
+                self.log_action("Generated component: LoginForm (from spec)")
+
+        # Generate API service
+        api_service_path = services_dir / "api.service.ts"
+        if not api_service_path.exists():
+            api_service_path.write_text(
+                EnhancedFrontendSkill.generate_api_service_from_spec(spec),
+                encoding="utf-8"
+            )
+            self.created_files.append(api_service_path)
+            self.log_action("Generated service: ApiService (from spec)")
+
+        # Generate UserList if user management mentioned
+        if any("/users" in api for api in spec.get("apis", [])):
+            user_list_path = components_dir / "UserList.tsx"
+            if not user_list_path.exists():
+                user_list_path.write_text(
+                    EnhancedFrontendSkill.generate_user_list_component_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(user_list_path)
+                self.log_action("Generated component: UserList (from spec)")
+
+        # Generate Dashboard page
+        dashboard_path = pages_dir / "dashboard.tsx"
+        if not dashboard_path.exists():
+            dashboard_path.write_text(
+                EnhancedFrontendSkill.generate_dashboard_page_from_spec(spec),
+                encoding="utf-8"
+            )
+            self.created_files.append(dashboard_path)
+            self.log_action("Generated page: Dashboard (from spec)")
+
+        # Generate registration page if registration mentioned
+        if any("register" in api.lower() for api in spec.get("apis", [])):
+            register_path = pages_dir / "register.tsx"
+            if not register_path.exists():
+                register_path.write_text(
+                    EnhancedFrontendSkill.generate_user_registration_page_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(register_path)
+                self.log_action("Generated page: Registration (from spec)")
+
+    def _generate_code_by_business_process(self, project_folder: Path, business_process: str) -> None:
+        """Fallback: Generate code based on business process type."""
         if business_process == "User Management":
             self._generate_user_management_components(project_folder)
         elif business_process == "Authentication & Authorization":

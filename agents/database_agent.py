@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .base_agent import BaseAgent
 from skills.database_skills import DatabaseSkill
+from skills.database_skills_enhanced import EnhancedDatabaseSkill
 
 
 class DatabaseAgent(BaseAgent):
@@ -538,11 +539,137 @@ All code for this subtask has been generated in the main project folder:
 
     def _generate_subtask_migration(self, migrations_dir: Path, subtask: Dict[str, Any],
                                      schema_name: str) -> None:
-        """Generate database migration scripts based on business process."""
-        # Get business process from subtask dict
+        """Generate database migration scripts based on README specifications."""
+        # Find corresponding subtask README if it exists
         business_process = subtask.get("business_process", "")
-        tables = subtask.get("tables", [])
+        readme_path = self._find_subtask_readme(business_process, subtask.get("title", ""))
 
+        if readme_path and Path(readme_path).exists():
+            # Parse README specifications
+            spec = EnhancedDatabaseSkill.parse_readme(readme_path)
+
+            if spec and spec.get("title"):
+                self._generate_migration_from_spec(migrations_dir, spec)
+            else:
+                # Fallback to process-based code generation
+                self._generate_migration_by_business_process(migrations_dir, business_process, subtask.get("tables", []))
+        else:
+            # Fallback to process-based code generation
+            self._generate_migration_by_business_process(migrations_dir, business_process, subtask.get("tables", []))
+
+    def _find_subtask_readme(self, business_process: str, subtask_title: str) -> str:
+        """Find README file for a subtask directory."""
+        # Look for README in subtask directories
+        subtasks_base = Path("subtasks")
+        if subtasks_base.exists():
+            for domain in ["backend", "frontend", "database"]:
+                domain_path = subtasks_base / domain
+                if domain_path.exists():
+                    # Search subdirectories for matching README
+                    for subtask_dir in domain_path.iterdir():
+                        if subtask_dir.is_dir():
+                            readme = subtask_dir / "README.md"
+                            if readme.exists():
+                                # Check if this README matches our business process
+                                with open(readme, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                    if business_process.lower() in content.lower():
+                                        return str(readme)
+        return ""
+
+    def _generate_migration_from_spec(self, migrations_dir: Path, spec: Dict[str, Any]) -> None:
+        """Generate database migrations based on parsed README specification."""
+        tables = spec.get("tables", [])
+        version = self._get_next_migration_version(migrations_dir)
+
+        # Generate User migration if users table mentioned
+        if any("user" in table.lower() for table in tables):
+            user_migration_path = migrations_dir / f"V{version:03d}_create_users_table.sql"
+            if not user_migration_path.exists():
+                user_migration_path.write_text(
+                    EnhancedDatabaseSkill.generate_user_migration_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(user_migration_path)
+                self.log_action(f"Generated migration: V{version:03d} Users table (from spec)")
+                version += 1
+
+        # Generate Audit Logs migration
+        if any("audit" in table.lower() for table in tables):
+            audit_migration_path = migrations_dir / f"V{version:03d}_create_audit_logs_table.sql"
+            if not audit_migration_path.exists():
+                audit_migration_path.write_text(
+                    EnhancedDatabaseSkill.generate_audit_logs_migration_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(audit_migration_path)
+                self.log_action(f"Generated migration: V{version:03d} Audit Logs table (from spec)")
+                version += 1
+
+        # Generate Activity Logs migration
+        if any("activity" in table.lower() for table in tables):
+            activity_migration_path = migrations_dir / f"V{version:03d}_create_activity_logs_table.sql"
+            if not activity_migration_path.exists():
+                activity_migration_path.write_text(
+                    EnhancedDatabaseSkill.generate_activity_logs_migration_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(activity_migration_path)
+                self.log_action(f"Generated migration: V{version:03d} Activity Logs table (from spec)")
+                version += 1
+
+        # Generate Sessions migration
+        if any("session" in table.lower() for table in tables):
+            sessions_migration_path = migrations_dir / f"V{version:03d}_create_sessions_table.sql"
+            if not sessions_migration_path.exists():
+                sessions_migration_path.write_text(
+                    EnhancedDatabaseSkill.generate_sessions_migration_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(sessions_migration_path)
+                self.log_action(f"Generated migration: V{version:03d} Sessions table (from spec)")
+                version += 1
+
+        # Generate Integration tables migration
+        if any("integration" in table.lower() for table in tables):
+            integration_migration_path = migrations_dir / f"V{version:03d}_create_integration_tables.sql"
+            if not integration_migration_path.exists():
+                integration_migration_path.write_text(
+                    EnhancedDatabaseSkill.generate_integration_tables_migration_from_spec(spec),
+                    encoding="utf-8"
+                )
+                self.created_files.append(integration_migration_path)
+                self.log_action(f"Generated migration: V{version:03d} Integration tables (from spec)")
+                version += 1
+
+        # Generate seed data and rollback scripts
+        seed_path = migrations_dir / f"V{version:03d}_seed_data.sql"
+        if not seed_path.exists():
+            seed_path.write_text(
+                EnhancedDatabaseSkill.generate_seed_data_from_spec(spec),
+                encoding="utf-8"
+            )
+            self.created_files.append(seed_path)
+            self.log_action(f"Generated migration: V{version:03d} Seed data (from spec)")
+
+    def _get_next_migration_version(self, migrations_dir: Path) -> int:
+        """Get the next migration version number."""
+        existing_files = list(migrations_dir.glob("V*.sql")) if migrations_dir.exists() else []
+        if not existing_files:
+            return 1
+
+        # Extract version numbers
+        versions = []
+        for f in existing_files:
+            import re
+            match = re.search(r'V(\d+)', f.name)
+            if match:
+                versions.append(int(match.group(1)))
+
+        return max(versions) + 1 if versions else 1
+
+    def _generate_migration_by_business_process(self, migrations_dir: Path, business_process: str, tables: List[str]) -> None:
+        """Fallback: Generate migration based on business process type."""
         if business_process == "User Management":
             self._generate_user_management_migration(migrations_dir, tables)
         elif business_process == "Authentication & Authorization":
