@@ -1,331 +1,97 @@
-# Multi-Agent Task Management System
+# Multi-Agent Code Generation System
 
-A sophisticated Claude Code project featuring a team of four specialized agents that collaborate to create and manage tasks across backend, frontend, and database domains.
+**Simplified & Dynamic Code Generation**
 
-## Quick Start
-
-### 1. Setup
-
-```bash
-# Clone or navigate to the project
-cd "path/to/New folder"
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-### 2. Configure Environment
-
-Create a `.env` file with your Claude API key:
-
-```
-ANTHROPIC_API_KEY=your_api_key_here
-```
-
-### 3. Run the Agent Team
-
-```bash
-# Run with default configuration
-python main.py
-
-# Run with GitHub publishing ready
-python main.py --publish
-
-# Run with specific GitHub repo
-python main.py --github-repo https://github.com/yourusername/your-repo.git
-```
-
-## Project Structure
-
-```
-.
-├── agents/                      # Agent implementations
-│   ├── __init__.py
-│   ├── base_agent.py           # Base agent class
-│   ├── task_creator.py         # Creates main tasks
-│   ├── backend_agent.py        # Backend development
-│   ├── frontend_agent.py       # Frontend development
-│   └── database_agent.py       # Database development
-├── skills/                      # Specialized skills
-│   ├── __init__.py
-│   ├── task_clarification.py   # Task clarification skill
-│   ├── backend_skills.py       # Backend-specific skills
-│   ├── frontend_skills.py      # Frontend-specific skills
-│   └── database_skills.py      # Database-specific skills
-├── tasks/                       # Generated tasks
-│   └── .gitkeep
-├── subtasks/                    # Generated subtasks
-│   ├── backend/
-│   ├── frontend/
-│   └── database/
-├── agent_team_config.json      # Team configuration
-├── main.py                      # Entry point
-├── requirements.txt             # Python dependencies
-├── CLAUDE.md                    # Project documentation
-└── README.md                    # This file
-```
+A lightweight system that generates production-ready code from subtask specifications using dynamic code generation.
 
 ## How It Works
 
-### Agent Team Workflow
+1. **Subtasks Define Requirements**
+   - Each subtask in `subtasks/{domain}/` contains a description
+   - Domain: backend, frontend, or database
 
-1. **Task Creator Agent** → Creates main tasks from requirements
-2. **Backend Agent** → Generates backend subtasks
-3. **Frontend Agent** → Generates frontend subtasks  
-4. **Database Agent** → Generates database subtasks + manages organization
+2. **Agents Read Specifications**
+   - BackendAgent searches `subtasks/backend/*.md`
+   - FrontendAgent searches `subtasks/frontend/*.md`
+   - DatabaseAgent searches `subtasks/database/*.md`
 
-### Skill System
+3. **Dynamic Code Generation**
+   - `DynamicCodeGenerator` reads subtask descriptions
+   - Generates code based on description content (keywords)
+   - No static templates - purely dynamic generation
 
-Each agent has specialized skills:
+4. **Output Files**
+   - Backend: Java Spring Boot code
+   - Frontend: React/TypeScript components
+   - Database: Oracle SQL migrations
 
-- **Backend**: API design, database schema planning, authentication
-- **Frontend**: UI/UX design, component architecture, state management
-- **Database**: Schema design, query optimization, monitoring setup
-- **Clarification**: Ambiguity detection and task refinement
+## Dynamic Code Generation
 
-## Agents
+The `DynamicCodeGenerator` class generates code by:
 
-### Task Creator Agent
-- Creates main tasks from project requirements
-- Distributes work to specialized agents
-- Manages task scope and priority
-
-### Backend Agent
-- Designs REST/GraphQL APIs
-- Plans database schemas
-- Suggests middleware and authentication flows
-- Generates implementation checklists
-
-### Frontend Agent
-- Designs component hierarchies
-- Plans page structures
-- Recommends state management solutions
-- Provides accessibility and responsive design checklists
-
-### Database Agent
-- Designs normalized schemas
-- Plans indexes and optimization strategies
-- Creates migration templates
-- Manages backup and recovery procedures
-- **Bonus**: Clarifies ambiguous tasks and organizes all outputs
-
-## Features
-
-✨ **Multi-Agent Collaboration**
-- Agents work independently but coordinate through a central orchestrator
-- Each agent focuses on their domain expertise
-
-🎯 **Skill-Based Execution**
-- Skills are modular and reusable
-- Each agent has specialized skills matching their role
-
-📁 **Organized Output**
-- Tasks and subtasks saved as Markdown files
-- Clear folder structure for different domains
-- Project summary for quick overview
-
-🔗 **GitHub Ready**
-- Easy publishing to GitHub repositories
-- Automatic commit preparation
-- Full version control integration
-
-## Configuration
-
-Edit `agent_team_config.json` to customize:
-- Agent models and priorities
-- Task flow and collaboration strategy
-- GitHub integration settings
-- Clarification triggers
-
-## Example Usage
-
-### Create a Single Task
+1. Parsing subtask descriptions
+2. Extracting keywords (user, audit, login, etc.)
+3. Generating appropriate code based on keywords
+4. No hardcoded templates or static methods
 
 ```python
-from agents import TaskCreatorAgent
-
-creator = TaskCreatorAgent()
-task = creator.create_main_task(
-    title="Add Payment Processing",
-    description="Implement Stripe payment integration",
-    priority="high",
-    domains=["backend", "frontend", "database"]
-)
-
-creator.save_task(task)
+# Simple, keyword-based generation
+if "user" in description:
+    generate User entity, UserService, UserController
+if "audit" in description:
+    generate AuditLog entity, AuditService
+if "login" in description:
+    generate LoginForm component
 ```
 
-### Generate Backend Subtasks
+## Simplifications Made
 
-```python
-from agents import BackendAgent
+✓ Removed static enhanced skill files (600+ lines)  
+✓ Replaced with dynamic code generator (200 lines)  
+✓ Removed unnecessary documentation files  
+✓ Cleaned up old generation scripts  
+✓ Simplified agent code generation logic  
+✓ Focused on requirements-driven development  
 
-backend = BackendAgent()
-subtasks = backend.create_subtasks_from_task(
-    task_id="add_payment_processing",
-    task_title="Add Payment Processing"
-)
+## Subtasks (15 Total)
 
-for subtask in subtasks:
-    backend.save_subtask(subtask)
-```
+### Backend (5 subtasks)
+- User Entity & CRUD Operations
+- JWT Authentication & Security Config
+- Core Service Implementation
+- REST API Endpoints & Controllers
+- Audit Logging & Monitoring Service
 
-## Output Examples
+### Frontend (5 subtasks)
+- User Management UI Components
+- Authentication Pages & Components
+- Core Feature Components & Pages
+- API Integration & Data Management
+- Audit & Monitoring Dashboard
 
-### Main Task File
+### Database (5 subtasks)
+- User Data Schema & CRUD Procedures
+- Authentication & Sessions Schema
+- Core Business Tables & Procedures
+- API Integration Tables & Services
+- Audit & Monitoring Tables
 
-```markdown
-# Add Payment Processing
+## Key Features
 
-**Created by**: Task Creator Agent
-**Date**: 2026-05-07 10:30:00
+✓ **Dynamic**: Code generation based on descriptions  
+✓ **Simple**: Minimal codebase, no complex templates  
+✓ **Flexible**: Easy to modify generation logic  
+✓ **Focused**: Requirements-driven development  
+✓ **Production-Ready**: Generated code includes proper structure  
 
-## Description
-Implement Stripe payment integration with support for cards and digital wallets.
+## Benefits
 
-## Priority
-HIGH
+- **Less Code**: Removed 600+ lines of static templates
+- **More Flexibility**: Changes to logic affect all generation
+- **Easier Maintenance**: Single source of generation rules
+- **Faster Development**: Quick updates to generation strategy
+- **Better Clarity**: Requirements directly drive code
 
-## Domains
-- backend
-- frontend
-- database
+---
 
-## Acceptance Criteria
-- [ ] Stripe account setup
-- [ ] Payment API integration
-- [ ] Webhook handling
-- [ ] UI implementation
-- [ ] Testing complete
-```
-
-### Subtask File
-
-```markdown
-# Backend API Implementation - Add Payment Processing
-
-**Created by**: Backend Agent
-
-## Domain
-Backend
-
-## Parent Task
-add_payment_processing
-
-## APIs to Implement
-- POST /api/v1/payments
-- GET /api/v1/payments/{id}
-- POST /api/v1/payments/{id}/refund
-
-## Acceptance Criteria
-- [ ] API endpoints implemented
-- [ ] Database integration complete
-- [ ] Error handling implemented
-```
-
-## Requirements
-
-- Python 3.8+
-- Claude API access
-- Git (for GitHub integration)
-
-## GitHub Integration
-
-### Setup
-
-```bash
-git init
-git add .
-git commit -m "Initial agent team setup"
-git remote add origin https://github.com/yourusername/your-repo.git
-git push -u origin main
-```
-
-### Auto-Update
-
-Tasks and subtasks are automatically ready to commit:
-
-```bash
-git add tasks/ subtasks/
-git commit -m "Auto-generated tasks and subtasks from agent team"
-git push
-```
-
-## Customization
-
-### Add New Skills
-
-Create a new skill file in `skills/`:
-
-```python
-class CustomSkill:
-    name = "custom"
-    description = "Custom skill description"
-    
-    @staticmethod
-    def custom_method():
-        pass
-```
-
-### Extend Agents
-
-Subclass base agents and add custom methods:
-
-```python
-from agents.base_agent import BaseAgent
-
-class CustomAgent(BaseAgent):
-    def __init__(self):
-        super().__init__(
-            agent_id="custom",
-            name="Custom Agent",
-            role="custom_role",
-            output_folder="custom_output"
-        )
-```
-
-## Environment Variables
-
-Create `.env`:
-
-```env
-ANTHROPIC_API_KEY=sk-...
-DEBUG=false
-LOG_LEVEL=INFO
-```
-
-## Troubleshooting
-
-### Agents not creating files
-- Check that folder permissions allow writing
-- Ensure output folders exist
-- Check Python path and imports
-
-### GitHub push fails
-- Verify GitHub credentials are configured
-- Check repository exists and is accessible
-- Ensure `.gitignore` is configured properly
-
-## Next Steps
-
-1. ✅ Run the sample task: `python main.py`
-2. 📝 Review generated tasks in `tasks/` and `subtasks/`
-3. 🔧 Customize `agent_team_config.json`
-4. 🚀 Push to GitHub: `git push origin main`
-
-## License
-
-This project is open source and available for educational and commercial use.
-
-## Support
-
-For issues and questions:
-- Check CLAUDE.md for detailed documentation
-- Review agent implementations for examples
-- Check skills for available capabilities
-
-Happy task creation! 🚀
+**Built for simplicity and clarity.**
