@@ -1,9 +1,11 @@
-"""Database Agent - Creates database subtasks and organizes outputs."""
+"""Database Agent - Creates database subtasks and generates Oracle/PL-SQL code."""
 
 from typing import Any, Dict, List
 import json
+from pathlib import Path
 
 from .base_agent import BaseAgent
+from skills.database_skills import DatabaseSkill
 
 
 class DatabaseAgent(BaseAgent):
@@ -17,14 +19,17 @@ class DatabaseAgent(BaseAgent):
             role="database_developer",
             output_folder="subtasks/database",
             skills=[
-                "database_design",
-                "query_optimization",
+                "oracle",
+                "plsql",
                 "schema_design",
+                "crud_operations",
                 "task_clarification",
                 "file_organization",
                 "github_integration",
             ],
         )
+        self.code_folder = Path("dbadmin")
+        self.code_folder.mkdir(parents=True, exist_ok=True)
 
     def create_database_subtask(
         self,
@@ -197,3 +202,139 @@ class DatabaseAgent(BaseAgent):
             "timestamp": __import__("datetime").datetime.now().isoformat(),
             "agent_id": self.agent_id,
         }
+
+    def generate_project_structure(self, project_name: str, schema_name: str = None) -> None:
+        """Generate complete Oracle database project structure."""
+        if schema_name is None:
+            schema_name = project_name.lower().replace(' ', '_')
+
+        project_folder = self.code_folder / project_name.lower().replace(' ', '_')
+        project_folder.mkdir(parents=True, exist_ok=True)
+
+        # Create schema creation script
+        schema_sql_path = project_folder / "001_schema_creation.sql"
+        schema_sql_path.write_text(
+            DatabaseSkill.generate_oracle_schema(schema_name),
+            encoding="utf-8"
+        )
+        self.created_files.append(schema_sql_path)
+        self.log_action(f"Generated schema creation script for {schema_name}")
+
+        # Create tables
+        tables_dir = project_folder / "tables"
+        tables_dir.mkdir(parents=True, exist_ok=True)
+
+        tables = ["user", "transaction", "audit"]
+        for table in tables:
+            table_sql_path = tables_dir / f"02_{table}_table.sql"
+            table_sql_path.write_text(
+                DatabaseSkill.generate_table_template(table),
+                encoding="utf-8"
+            )
+            self.created_files.append(table_sql_path)
+
+        # Create CRUD procedures
+        procedures_dir = project_folder / "procedures"
+        procedures_dir.mkdir(parents=True, exist_ok=True)
+
+        for table in tables:
+            crud_path = procedures_dir / f"03_{table}_crud.sql"
+            crud_path.write_text(
+                DatabaseSkill.generate_crud_procedures(table),
+                encoding="utf-8"
+            )
+            self.created_files.append(crud_path)
+
+        # Create migration script
+        migration_path = project_folder / "migrations" / "001_initial.sql"
+        migration_path.parent.mkdir(parents=True, exist_ok=True)
+        migration_path.write_text(
+            DatabaseSkill.generate_migration_script("001"),
+            encoding="utf-8"
+        )
+        self.created_files.append(migration_path)
+
+        # Create packages
+        packages_dir = project_folder / "packages"
+        packages_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create setup script
+        setup_script = project_folder / "setup.sh"
+        setup_script.write_text(
+            DatabaseSkill.generate_oracle_setup_script(),
+            encoding="utf-8"
+        )
+        self.created_files.append(setup_script)
+
+        # Create README
+        readme_path = project_folder / "README.md"
+        readme_content = f"""# {project_name} - Database Schema
+
+## Schema Information
+
+- **Schema Name**: {schema_name}
+- **Database**: Oracle 21c/23c
+- **Connection String**: jdbc:oracle:thin:@localhost:1521:xe
+
+## Directory Structure
+
+- `001_schema_creation.sql` - Initial schema and user setup
+- `tables/` - Table definitions
+- `procedures/` - CRUD stored procedures
+- `packages/` - PL/SQL packages
+- `migrations/` - Migration scripts
+- `setup.sh` - Automated setup script
+
+## CRUD Operations
+
+All tables include:
+- INSERT procedure
+- SELECT procedure (single & all)
+- UPDATE procedure
+- DELETE procedure
+- Audit triggers
+- Indexes for performance
+
+## Setup
+
+```bash
+# Run setup script
+./setup.sh
+
+# Connect to SQL*Plus
+sqlplus /nolog
+
+# In SQL*Plus:
+@001_schema_creation.sql
+@tables/02_user_table.sql
+@tables/02_transaction_table.sql
+@tables/02_audit_table.sql
+@procedures/03_user_crud.sql
+@procedures/03_transaction_crud.sql
+@procedures/03_audit_crud.sql
+```
+
+## Tables Created
+
+1. **user** - User master table
+2. **transaction** - Transaction records
+3. **audit** - Audit trail
+
+Each table includes:
+- Primary key
+- Timestamps (created_at, updated_at)
+- Audit triggers
+- Indexes
+
+## Best Practices
+
+- Use parameters for security
+- All procedures with error handling
+- Automatic audit trail
+- Transaction safety
+- Proper indexing
+"""
+        readme_path.write_text(readme_content, encoding="utf-8")
+        self.created_files.append(readme_path)
+
+        self.log_action(f"Database project structure created: {project_name}")

@@ -1,8 +1,10 @@
-"""Frontend Agent - Creates frontend subtasks and UI implementation plans."""
+"""Frontend Agent - Creates frontend subtasks and generates React/Next.js code."""
 
 from typing import Any, Dict, List
+from pathlib import Path
 
 from .base_agent import BaseAgent
+from skills.frontend_skills import FrontendSkill
 
 
 class FrontendAgent(BaseAgent):
@@ -16,12 +18,16 @@ class FrontendAgent(BaseAgent):
             role="frontend_developer",
             output_folder="subtasks/frontend",
             skills=[
-                "ui_ux_design",
-                "component_architecture",
-                "state_management",
+                "react_nextjs",
+                "vite",
+                "typescript",
+                "axios",
                 "responsive_design",
+                "design_patterns",
             ],
         )
+        self.code_folder = Path("frontend")
+        self.code_folder.mkdir(parents=True, exist_ok=True)
 
     def create_frontend_subtask(
         self,
@@ -107,15 +113,89 @@ class FrontendAgent(BaseAgent):
             self.create_frontend_subtask(
                 task_id=task_id,
                 title=f"UI Components - {task_title}",
-                description="Build reusable UI components",
+                description="Build reusable UI components with React & TypeScript",
                 components=["Button", "Form", "Card", "Modal"],
             ),
             self.create_frontend_subtask(
                 task_id=task_id,
                 title=f"Pages - {task_title}",
-                description="Implement feature pages",
+                description="Implement feature pages with Next.js",
                 pages=["Dashboard", "Details", "Settings"],
             ),
         ]
 
         return subtasks
+
+    def generate_project_structure(self, project_name: str) -> None:
+        """Generate complete frontend project structure."""
+        project_folder = self.code_folder / project_name.lower().replace(' ', '_')
+        project_folder.mkdir(parents=True, exist_ok=True)
+
+        # Create package.json
+        package_json_path = project_folder / "package.json"
+        package_json_path.write_text(
+            FrontendSkill.generate_package_json(project_name),
+            encoding="utf-8"
+        )
+        self.created_files.append(package_json_path)
+        self.log_action(f"Generated package.json for {project_name}")
+
+        # Create tsconfig.json
+        tsconfig_path = project_folder / "tsconfig.json"
+        tsconfig_path.write_text(
+            FrontendSkill.generate_tsconfig(),
+            encoding="utf-8"
+        )
+        self.created_files.append(tsconfig_path)
+        self.log_action(f"Generated tsconfig.json")
+
+        # Create .eslintrc.json
+        eslint_path = project_folder / ".eslintrc.json"
+        eslint_path.write_text(
+            FrontendSkill.generate_eslint_config(),
+            encoding="utf-8"
+        )
+        self.created_files.append(eslint_path)
+
+        # Create directories
+        dirs = [
+            "src/components",
+            "src/pages",
+            "src/services",
+            "src/hooks",
+            "src/types",
+            "src/utils",
+            "src/styles",
+            "public",
+        ]
+
+        for dir_name in dirs:
+            (project_folder / dir_name).mkdir(parents=True, exist_ok=True)
+
+        # Create sample files
+        services_dir = project_folder / "src/services"
+        api_service_path = services_dir / "api.service.ts"
+        api_service_path.write_text(
+            FrontendSkill.generate_api_service("api"),
+            encoding="utf-8"
+        )
+        self.created_files.append(api_service_path)
+
+        # Create sample component
+        components_dir = project_folder / "src/components"
+        button_path = components_dir / "Button.tsx"
+        button_path.write_text(
+            FrontendSkill.generate_component_template("button"),
+            encoding="utf-8"
+        )
+        self.created_files.append(button_path)
+
+        # Create setup script
+        setup_script = project_folder / "setup.sh"
+        setup_script.write_text(
+            FrontendSkill.generate_setup_script(),
+            encoding="utf-8"
+        )
+        self.created_files.append(setup_script)
+
+        self.log_action(f"Frontend project structure created: {project_name}")

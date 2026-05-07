@@ -1,8 +1,10 @@
-"""Backend Agent - Creates backend subtasks and implementation plans."""
+"""Backend Agent - Creates backend subtasks and generates Spring Boot Java code."""
 
 from typing import Any, Dict, List
+from pathlib import Path
 
 from .base_agent import BaseAgent
+from skills.backend_skills import BackendSkill
 
 
 class BackendAgent(BaseAgent):
@@ -16,12 +18,16 @@ class BackendAgent(BaseAgent):
             role="backend_developer",
             output_folder="subtasks/backend",
             skills=[
-                "backend_architecture",
+                "java",
+                "spring_boot",
+                "hibernate",
+                "maven",
+                "clean_code",
                 "api_design",
-                "database_schema_planning",
-                "authentication_planning",
             ],
         )
+        self.code_folder = Path("backend")
+        self.code_folder.mkdir(parents=True, exist_ok=True)
 
     def create_backend_subtask(
         self,
@@ -106,15 +112,100 @@ class BackendAgent(BaseAgent):
             self.create_backend_subtask(
                 task_id=task_id,
                 title=f"Backend API Implementation - {task_title}",
-                description="Implement REST APIs for the feature",
+                description="Implement REST APIs with Spring Boot",
                 apis=["/api/v1/...", "/api/v1/.../detail"],
+                auth_required=True,
             ),
             self.create_backend_subtask(
                 task_id=task_id,
-                title=f"Database Schema - {task_title}",
-                description="Design and implement database schema",
+                title=f"Database Schema & Hibernate Mapping - {task_title}",
+                description="Design schema and create Hibernate entities",
                 db_schemas=["users", "transactions"],
             ),
         ]
 
         return subtasks
+
+    def generate_project_structure(self, project_name: str) -> None:
+        """Generate complete Spring Boot project structure."""
+        project_folder = self.code_folder / project_name.lower().replace(' ', '_')
+        project_folder.mkdir(parents=True, exist_ok=True)
+
+        # Create pom.xml
+        pom_path = project_folder / "pom.xml"
+        pom_path.write_text(
+            BackendSkill.generate_pom_xml(project_name),
+            encoding="utf-8"
+        )
+        self.created_files.append(pom_path)
+        self.log_action(f"Generated pom.xml for {project_name}")
+
+        # Create source directories
+        base_package = project_name.lower().replace(' ', '').replace('-', '')
+        src_dirs = [
+            f"src/main/java/com/example/{base_package}",
+            f"src/main/java/com/example/{base_package}/entity",
+            f"src/main/java/com/example/{base_package}/repository",
+            f"src/main/java/com/example/{base_package}/service",
+            f"src/main/java/com/example/{base_package}/controller",
+            "src/main/resources",
+            "src/test/java/com/example",
+            "target",
+        ]
+
+        for dir_name in src_dirs:
+            (project_folder / dir_name).mkdir(parents=True, exist_ok=True)
+
+        # Create application.yml
+        app_yml_path = project_folder / "src/main/resources/application.yml"
+        app_yml_path.write_text(
+            BackendSkill.generate_application_yml(),
+            encoding="utf-8"
+        )
+        self.created_files.append(app_yml_path)
+
+        # Create sample entity
+        entity_dir = project_folder / f"src/main/java/com/example/{base_package}/entity"
+        user_entity_path = entity_dir / "User.java"
+        user_entity_path.write_text(
+            BackendSkill.generate_entity_template("user"),
+            encoding="utf-8"
+        )
+        self.created_files.append(user_entity_path)
+
+        # Create sample repository
+        repo_dir = project_folder / f"src/main/java/com/example/{base_package}/repository"
+        user_repo_path = repo_dir / "UserRepository.java"
+        user_repo_path.write_text(
+            BackendSkill.generate_repository_template("user"),
+            encoding="utf-8"
+        )
+        self.created_files.append(user_repo_path)
+
+        # Create sample service
+        service_dir = project_folder / f"src/main/java/com/example/{base_package}/service"
+        user_service_path = service_dir / "UserService.java"
+        user_service_path.write_text(
+            BackendSkill.generate_service_template("user"),
+            encoding="utf-8"
+        )
+        self.created_files.append(user_service_path)
+
+        # Create sample controller
+        controller_dir = project_folder / f"src/main/java/com/example/{base_package}/controller"
+        user_controller_path = controller_dir / "UserController.java"
+        user_controller_path.write_text(
+            BackendSkill.generate_controller_template("user"),
+            encoding="utf-8"
+        )
+        self.created_files.append(user_controller_path)
+
+        # Create setup script
+        setup_script = project_folder / "setup.sh"
+        setup_script.write_text(
+            BackendSkill.generate_pom_maven_setup(),
+            encoding="utf-8"
+        )
+        self.created_files.append(setup_script)
+
+        self.log_action(f"Backend project structure created: {project_name}")

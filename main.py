@@ -72,10 +72,11 @@ class AgentTeamOrchestrator:
 
     def process_project(self, project: Dict[str, Any]) -> None:
         """Process a single project through all agents."""
-        print(f"\n{'='*60}")
+        print(f"\n{'='*70}")
         print(f"Processing Project: {project['name']}")
         print(f"Priority: {project.get('priority', 'medium').upper()}")
-        print(f"{'='*60}\n")
+        print(f"Description: {project['description']}")
+        print(f"{'='*70}\n")
 
         # Task Creator Agent: Create main task from project
         print("📋 Task Creator Agent is working...")
@@ -96,9 +97,9 @@ class AgentTeamOrchestrator:
         clarified_task = self.database_agent.clarify_task_description(task)
         print(f"  ✓ Task requirements clarified\n")
 
-        # Backend Agent: Create backend subtasks
+        # Backend Agent: Create backend subtasks and code
         if "backend" in project.get('domains', []):
-            print("🔧 Backend Agent is creating subtasks...")
+            print("🔧 Backend Agent is creating Java/Spring Boot code...")
             backend_subtasks = self.backend_agent.create_subtasks_from_task(
                 task_id=task["id"],
                 task_title=task["title"],
@@ -107,11 +108,15 @@ class AgentTeamOrchestrator:
                 subtask_file = self.backend_agent.save_subtask(subtask)
                 self.created_tasks["backend"].append(subtask_file)
                 print(f"  ✓ {subtask['title']}")
+
+            # Generate backend project structure
+            self.backend_agent.generate_project_structure(project['name'])
+            print(f"  ✓ Generated: pom.xml, entities, repositories, services, controllers")
             print()
 
-        # Frontend Agent: Create frontend subtasks
+        # Frontend Agent: Create frontend subtasks and code
         if "frontend" in project.get('domains', []):
-            print("🎨 Frontend Agent is creating subtasks...")
+            print("🎨 Frontend Agent is creating React/Next.js & TypeScript code...")
             frontend_subtasks = self.frontend_agent.create_subtasks_from_task(
                 task_id=task["id"],
                 task_title=task["title"],
@@ -120,11 +125,15 @@ class AgentTeamOrchestrator:
                 subtask_file = self.frontend_agent.save_subtask(subtask)
                 self.created_tasks["frontend"].append(subtask_file)
                 print(f"  ✓ {subtask['title']}")
+
+            # Generate frontend project structure
+            self.frontend_agent.generate_project_structure(project['name'])
+            print(f"  ✓ Generated: package.json, tsconfig, components, services, pages")
             print()
 
-        # Database Agent: Create database subtasks
+        # Database Agent: Create database subtasks and code
         if "database" in project.get('domains', []):
-            print("💾 Database Agent is creating subtasks...")
+            print("💾 Database Agent is creating Oracle/PL-SQL code...")
             database_subtasks = self.database_agent.create_subtasks_from_task(
                 task_id=task["id"],
                 task_title=task["title"],
@@ -133,6 +142,10 @@ class AgentTeamOrchestrator:
                 subtask_file = self.database_agent.save_subtask(subtask)
                 self.created_tasks["database"].append(subtask_file)
                 print(f"  ✓ {subtask['title']}")
+
+            # Generate database project structure
+            self.database_agent.generate_project_structure(project['name'])
+            print(f"  ✓ Generated: schema, tables, CRUD procedures, migrations")
             print()
 
         print(f"✅ Project '{project['name']}' processing complete!\n")
@@ -206,22 +219,92 @@ class AgentTeamOrchestrator:
         print(f"  • subtasks/database/")
 
 
+def get_interactive_project_input() -> Dict[str, Any]:
+    """Get project input interactively from user."""
+    print("\n" + "="*70)
+    print("🚀 AGENT TEAM PROJECT INPUT")
+    print("="*70 + "\n")
+
+    # Get project name
+    name = input("📝 Project name: ").strip()
+    if not name:
+        print("❌ Project name cannot be empty!")
+        return None
+
+    # Get description
+    description = input("📝 Project description: ").strip()
+    if not description:
+        description = name
+
+    # Get priority
+    print("\n⭐ Select priority:")
+    print("  1. Low")
+    print("  2. Medium (default)")
+    print("  3. High")
+    priority_input = input("Choose (1-3) [default: 2]: ").strip()
+    priority_map = {"1": "low", "2": "medium", "3": "high"}
+    priority = priority_map.get(priority_input, "medium")
+
+    # Get domains
+    print("\n🔧 Select domains (comma-separated or all):")
+    print("  backend   - Java, Spring Boot, Hibernate, Maven")
+    print("  frontend  - React, Next.js, Vite, TypeScript, Axios")
+    print("  database  - Oracle, PL/SQL, Schema, CRUD")
+    print("  all       - Include all domains (default)")
+    domains_input = input("Choose [default: all]: ").strip().lower()
+
+    if not domains_input or domains_input == "all":
+        domains = ["backend", "frontend", "database"]
+    else:
+        domains = [d.strip() for d in domains_input.split(",") if d.strip()]
+        valid_domains = {"backend", "frontend", "database"}
+        domains = [d for d in domains if d in valid_domains]
+        if not domains:
+            domains = ["backend", "frontend", "database"]
+
+    project = {
+        "name": name,
+        "description": description,
+        "priority": priority,
+        "domains": domains,
+    }
+
+    print("\n✅ Project configured:")
+    print(f"   Name: {name}")
+    print(f"   Description: {description}")
+    print(f"   Priority: {priority.upper()}")
+    print(f"   Domains: {', '.join(domains)}\n")
+
+    return project
+
+
 def main():
     """Main execution function."""
     parser = argparse.ArgumentParser(
-        description="Multi-agent task management system - Process projects with specialized agents",
+        description="Multi-agent task management system - Generate full-stack code from project ideas",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py --projects projects.json
-  python main.py --add-project "Project Name" --description "Project description"
-  python main.py --projects projects.json --publish --github-repo https://github.com/user/repo.git
+  python main.py --interactive              - Interactive project input
+  python main.py --sample                   - Run sample projects
+  python main.py --projects projects.json   - Load from file
+  python main.py --add-project "Project Name" --description "Details"
+
+Each agent generates production-ready code in their folder:
+  - Backend Agent → backend/  (Java, Spring Boot, Hibernate, Maven)
+  - Frontend Agent → frontend/ (React, Next.js, Vite, TypeScript, Axios)
+  - Database Agent → dbadmin/ (Oracle, PL/SQL, CRUD procedures)
         """,
     )
     parser.add_argument(
         "--config",
         default="agent_team_config.json",
-        help="Path to configuration file (default: agent_team_config.json)",
+        help="Path to configuration file",
+    )
+    parser.add_argument(
+        "--interactive",
+        action="store_true",
+        help="Interactive mode - enter project details",
     )
     parser.add_argument(
         "--projects",
@@ -233,7 +316,7 @@ Examples:
     )
     parser.add_argument(
         "--description",
-        help="Description for the project (used with --add-project)",
+        help="Description for the project",
     )
     parser.add_argument(
         "--priority",
@@ -244,7 +327,7 @@ Examples:
     parser.add_argument(
         "--domains",
         default="backend,frontend,database",
-        help="Comma-separated domains (backend,frontend,database)",
+        help="Comma-separated domains",
     )
     parser.add_argument(
         "--sample",
@@ -253,7 +336,7 @@ Examples:
     )
     parser.add_argument(
         "--github-repo",
-        help="GitHub repository URL for publishing",
+        help="GitHub repository URL",
     )
     parser.add_argument(
         "--publish",
@@ -266,8 +349,12 @@ Examples:
     # Initialize orchestrator
     orchestrator = AgentTeamOrchestrator(config_path=args.config)
 
-    # Load projects
-    if args.projects:
+    # Load projects based on input
+    if args.interactive:
+        project = get_interactive_project_input()
+        if project:
+            orchestrator.add_project(**project)
+    elif args.projects:
         orchestrator.load_projects(args.projects)
     elif args.add_project:
         domains = [d.strip() for d in args.domains.split(",")]
@@ -298,6 +385,11 @@ Examples:
 
     # Process all projects
     if orchestrator.projects:
+        print(f"\n🚀 Agents will generate code in:")
+        print(f"   📁 backend/   - Spring Boot Java code")
+        print(f"   📁 frontend/  - React/Next.js TypeScript code")
+        print(f"   📁 dbadmin/   - Oracle/PL-SQL scripts\n")
+
         orchestrator.process_all_projects()
         orchestrator.organize_outputs()
 
@@ -307,10 +399,11 @@ Examples:
         orchestrator.print_summary()
     else:
         print("❌ No projects to process!")
-        print("\nUsage examples:")
-        print("  python main.py --sample")
-        print("  python main.py --projects projects.json")
-        print("  python main.py --add-project 'My Project' --description 'Project details'")
+        print("\n🎯 Usage examples:")
+        print("  python main.py --interactive           # Enter project interactively")
+        print("  python main.py --sample                # Run with sample projects")
+        print("  python main.py --projects projects.json  # Load from file")
+        print("  python main.py --add-project 'My App' --description 'Details'")
 
 
 if __name__ == "__main__":
