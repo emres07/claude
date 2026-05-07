@@ -558,23 +558,19 @@ All code for this subtask has been generated in the main project folder:
             self._generate_migration_by_business_process(migrations_dir, business_process, subtask.get("tables", []))
 
     def _find_subtask_readme(self, business_process: str, subtask_title: str) -> str:
-        """Find README file for a subtask directory."""
-        # Look for README in subtask directories
-        subtasks_base = Path("subtasks")
+        """Find subtask MD file for the given business process."""
+        # Look for subtask MD files in subtasks/database/
+        subtasks_base = Path("subtasks/database")
         if subtasks_base.exists():
-            for domain in ["backend", "frontend", "database"]:
-                domain_path = subtasks_base / domain
-                if domain_path.exists():
-                    # Search subdirectories for matching README
-                    for subtask_dir in domain_path.iterdir():
-                        if subtask_dir.is_dir():
-                            readme = subtask_dir / "README.md"
-                            if readme.exists():
-                                # Check if this README matches our business process
-                                with open(readme, 'r', encoding='utf-8') as f:
-                                    content = f.read()
-                                    if business_process.lower() in content.lower():
-                                        return str(readme)
+            # Search for MD files that contain the business process in their name
+            for md_file in subtasks_base.glob("*.md"):
+                if md_file.is_file() and md_file.name != "README.md" and md_file.name != "project_summary.md":
+                    # Read file to check if it matches the business process
+                    with open(md_file, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        # Check for business process in title and parent task
+                        if business_process.lower() in content.lower():
+                            return str(md_file)
         return ""
 
     def _generate_migration_from_spec(self, migrations_dir: Path, spec: Dict[str, Any]) -> None:

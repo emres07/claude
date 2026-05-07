@@ -20,7 +20,7 @@ class EnhancedBackendSkill:
 
     @staticmethod
     def parse_readme(readme_path: str) -> Dict[str, Any]:
-        """Parse README file and extract specifications."""
+        """Parse subtask MD file and extract specifications."""
         if not Path(readme_path).exists():
             return {}
 
@@ -29,10 +29,10 @@ class EnhancedBackendSkill:
 
         spec = {
             "title": EnhancedBackendSkill._extract_title(content),
-            "description": EnhancedBackendSkill._extract_section(content, "### Description"),
-            "apis": EnhancedBackendSkill._extract_list(content, "### APIs Generated"),
-            "tables": EnhancedBackendSkill._extract_list(content, "### Database Schemas"),
-            "databases": EnhancedBackendSkill._extract_list(content, "### Database Schemas"),
+            "description": EnhancedBackendSkill._extract_section(content, "## Description"),
+            "apis": EnhancedBackendSkill._extract_list(content, "## APIs to Implement"),
+            "tables": EnhancedBackendSkill._extract_list(content, "## Database Schemas"),
+            "databases": EnhancedBackendSkill._extract_list(content, "## Database Schemas"),
         }
         return spec
 

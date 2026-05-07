@@ -254,23 +254,19 @@ class BackendAgent(BaseAgent):
             self._generate_code_by_business_process(project_folder, base_package, business_process)
 
     def _find_subtask_readme(self, business_process: str, subtask_title: str) -> str:
-        """Find README file for a subtask directory."""
-        # Look for README in subtask directories
-        subtasks_base = Path("subtasks")
+        """Find subtask MD file for the given business process."""
+        # Look for subtask MD files in subtasks/backend/
+        subtasks_base = Path("subtasks/backend")
         if subtasks_base.exists():
-            for domain in ["backend", "frontend", "database"]:
-                domain_path = subtasks_base / domain
-                if domain_path.exists():
-                    # Search subdirectories for matching README
-                    for subtask_dir in domain_path.iterdir():
-                        if subtask_dir.is_dir():
-                            readme = subtask_dir / "README.md"
-                            if readme.exists():
-                                # Check if this README matches our business process
-                                with open(readme, 'r', encoding='utf-8') as f:
-                                    content = f.read()
-                                    if business_process.lower() in content.lower():
-                                        return str(readme)
+            # Search for MD files that contain the business process in their name
+            for md_file in subtasks_base.glob("*.md"):
+                if md_file.is_file() and md_file.name != "README.md":
+                    # Read file to check if it matches the business process
+                    with open(md_file, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        # Check for business process in title and parent task
+                        if business_process.lower() in content.lower():
+                            return str(md_file)
         return ""
 
     def _generate_code_from_spec(self, project_folder: Path, base_package: str, spec: Dict[str, Any]) -> None:
