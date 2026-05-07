@@ -114,7 +114,7 @@ export const {camel_case}: React.FC<{camel_case}Props> = (props) => {{
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold">{camel_case}</h1>
-      {/* Component JSX */}}
+      {{/* Component JSX */}}
     </div>
   );
 }};
