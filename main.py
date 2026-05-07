@@ -97,79 +97,87 @@ class AgentTeamOrchestrator:
 
         print()
 
-        # Process each task with its specific domain agent
+        # Process each phase task with all domain agents
         for task in tasks:
-            self._process_domain_task(task, project)
+            self._process_phase_task(task, project)
 
-    def _process_domain_task(self, task: Dict[str, Any], project: Dict[str, Any]) -> None:
-        """Process a domain-specific task and create its subtasks."""
-        domain = task["domains"][0]  # Each task has exactly one domain
+    def _process_phase_task(self, task: Dict[str, Any], project: Dict[str, Any]) -> None:
+        """Process a phase task by having all domain agents create their subtasks."""
         project_name = project['name']
+        domains = task.get("domains", ["backend", "frontend", "database"])
 
-        print(f"\n{'-'*70}")
+        print(f"\n{'='*70}")
         print(f"Task: {task['title']}")
-        print(f"Domain: {domain.upper()}")
-        print(f"{'-'*70}\n")
+        print(f"Domains: {', '.join([d.upper() for d in domains])}")
+        print(f"{'='*70}\n")
 
         # Clarify task description
         print("[CHECK] Clarifying task requirements...")
         clarified_task = self.database_agent.clarify_task_description(task)
         print(f"  [OK] Task clarified: {task['title']}\n")
 
-        # Process by domain
-        if domain == "backend":
-            print("[TOOL] Backend Agent is creating Java/Spring Boot code...")
+        # Get phase number for later use
+        phase_num = int(task["title"].split(":")[0].split()[-1])  # Extract phase number
+
+        # Backend Agent creates subtask for this phase
+        if "backend" in domains:
+            print("[TOOL] Backend Agent is creating subtask for this phase...")
             try:
                 backend_subtasks = self.backend_agent.create_subtasks_from_task(
                     task_id=task["id"],
                     task_title=task["title"],
                 )
-                for subtask in backend_subtasks:
-                    subtask_file = self.backend_agent.save_subtask(subtask)
-                    self.created_tasks["backend"].append(subtask_file)
-                    print(f"  [OK] {subtask['title']}")
+                # Only generate code for the specific phase
+                phase_subtask = [s for s in backend_subtasks if backend_subtasks.index(s) == phase_num - 1][0]
+                subtask_file = self.backend_agent.save_subtask(phase_subtask)
+                self.created_tasks["backend"].append(subtask_file)
+                print(f"  [OK] {phase_subtask['title']}")
 
-                # Generate backend project structure with subtasks
-                self.backend_agent.generate_project_structure(project_name, backend_subtasks)
-                print(f"\n  [OK] Generated: pom.xml, entities, repositories, services, controllers\n")
+                # Generate backend code for this phase
+                self.backend_agent.generate_project_structure(project_name, [phase_subtask])
+                print(f"  [OK] Backend code generated for phase {phase_num}\n")
             except Exception as e:
-                print(f"  [ERROR] Error generating backend code: {str(e)}\n")
+                print(f"  [ERROR] Backend error: {str(e)}\n")
 
-        elif domain == "frontend":
-            print("[ART] Frontend Agent is creating React/Next.js & TypeScript code...")
+        # Frontend Agent creates subtask for this phase
+        if "frontend" in domains:
+            print("[ART] Frontend Agent is creating subtask for this phase...")
             try:
                 frontend_subtasks = self.frontend_agent.create_subtasks_from_task(
                     task_id=task["id"],
                     task_title=task["title"],
                 )
-                for subtask in frontend_subtasks:
-                    subtask_file = self.frontend_agent.save_subtask(subtask)
-                    self.created_tasks["frontend"].append(subtask_file)
-                    print(f"  [OK] {subtask['title']}")
+                # Only generate code for the specific phase
+                phase_subtask = [s for s in frontend_subtasks if frontend_subtasks.index(s) == phase_num - 1][0]
+                subtask_file = self.frontend_agent.save_subtask(phase_subtask)
+                self.created_tasks["frontend"].append(subtask_file)
+                print(f"  [OK] {phase_subtask['title']}")
 
-                # Generate frontend project structure with subtasks
-                self.frontend_agent.generate_project_structure(project_name, frontend_subtasks)
-                print(f"\n  [OK] Generated: package.json, tsconfig, components, services, pages\n")
+                # Generate frontend code for this phase
+                self.frontend_agent.generate_project_structure(project_name, [phase_subtask])
+                print(f"  [OK] Frontend code generated for phase {phase_num}\n")
             except Exception as e:
-                print(f"  [ERROR] Error generating frontend code: {str(e)}\n")
+                print(f"  [ERROR] Frontend error: {str(e)}\n")
 
-        elif domain == "database":
-            print("[DB] Database Agent is creating Oracle/PL-SQL code...")
+        # Database Agent creates subtask for this phase
+        if "database" in domains:
+            print("[DB] Database Agent is creating subtask for this phase...")
             try:
                 database_subtasks = self.database_agent.create_subtasks_from_task(
                     task_id=task["id"],
                     task_title=task["title"],
                 )
-                for subtask in database_subtasks:
-                    subtask_file = self.database_agent.save_subtask(subtask)
-                    self.created_tasks["database"].append(subtask_file)
-                    print(f"  [OK] {subtask['title']}")
+                # Only generate code for the specific phase
+                phase_subtask = [s for s in database_subtasks if database_subtasks.index(s) == phase_num - 1][0]
+                subtask_file = self.database_agent.save_subtask(phase_subtask)
+                self.created_tasks["database"].append(subtask_file)
+                print(f"  [OK] {phase_subtask['title']}")
 
-                # Generate database project structure with subtasks
-                self.database_agent.generate_project_structure(project_name, database_subtasks)
-                print(f"\n  [OK] Generated: schema, tables, CRUD procedures, migrations\n")
+                # Generate database code for this phase
+                self.database_agent.generate_project_structure(project_name, [phase_subtask])
+                print(f"  [OK] Database code generated for phase {phase_num}\n")
             except Exception as e:
-                print(f"  [ERROR] Error generating database code: {str(e)}\n")
+                print(f"  [ERROR] Database error: {str(e)}\n")
 
     def process_all_projects(self) -> None:
         """Process all projects through the agent team."""

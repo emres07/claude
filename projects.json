@@ -1,7 +1,7 @@
 [
   {
-    "name": "TO DO LİST APP",
-    "description": "Implement TO DO list application with add, edit, delete, and mark complete functionalities.",
+  "name": "CALENDAR APP",
+    "description": "Implement calendar  application to manage meeting at a clinic with add, edit, delete, and mark complete functionalities for calendar app.",
     "priority": "high",
     "domains": ["backend", "frontend", "database"]
   }

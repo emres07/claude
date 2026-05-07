@@ -1,0 +1,31 @@
+# Project Task Organization Summary
+
+## Overview
+This file contains an organized view of all tasks and subtasks created by the agent team.
+
+## Tasks
+- tasks\backend_development___calendar_app_main.md
+- tasks\frontend_development___calendar_app_main.md
+- tasks\database_design_&_implementation___calendar_app_main.md
+
+## Backend Subtasks
+- subtasks\backend\setup_spring_boot_project___backend_development___calendar_app.md
+- subtasks\backend\create_entities_&_repositories___backend_development___calendar_app.md
+- subtasks\backend\implement_services_&_business_logic___backend_development___calendar_app.md
+- subtasks\backend\build_rest_controllers_&_apis___backend_development___calendar_app.md
+- subtasks\backend\add_security_&_exception_handling___backend_development___calendar_app.md
+
+## Frontend Subtasks
+- subtasks\frontend\setup_nextjs_project___frontend_development___calendar_app.md
+- subtasks\frontend\create_base_components___frontend_development___calendar_app.md
+- subtasks\frontend\build_feature_components___frontend_development___calendar_app.md
+- subtasks\frontend\implement_pages_&_routing___frontend_development___calendar_app.md
+- subtasks\frontend\api_integration_&_state_management___frontend_development___calendar_app.md
+
+## Database Subtasks
+- subtasks\database\database_setup_&_schema_creation___database_design_&_implementation___calendar_app.md
+- subtasks\database\create_core_tables___database_design_&_implementation___calendar_app.md
+- subtasks\database\create_indexes_&_triggers___database_design_&_implementation___calendar_app.md
+- subtasks\database\create_stored_procedures___database_design_&_implementation___calendar_app.md
+- subtasks\database\setup_backup_&_documentation___database_design_&_implementation___calendar_app.md
+

@@ -92,64 +92,83 @@ class TaskCreatorAgent(BaseAgent):
         priority: str = "medium",
         domains: List[str] = None,
     ) -> List[Dict[str, Any]]:
-        """Break down a project into multiple main tasks by domain."""
+        """Break down a project into project phases as main tasks."""
         if domains is None:
             domains = ["backend", "frontend", "database"]
 
         tasks = []
 
-        # Create Backend Task
-        if "backend" in domains:
-            backend_task = self.create_main_task(
-                title=f"Backend Development - {project_name}",
-                description=f"Backend API development for {project_name}. {project_description}",
-                priority=priority,
-                domains=["backend"],
-                acceptance_criteria=[
-                    "REST APIs implemented",
-                    "Database integration complete",
-                    "Authentication/Authorization working",
-                    "Error handling implemented",
-                    "API documentation complete",
+        # Define project phases
+        phases = [
+            {
+                "phase": "Phase 1",
+                "title": "Setup & Configuration",
+                "description": "Project initialization, configuration, and environment setup",
+                "criteria": [
+                    "Project structure created",
+                    "Build tools configured",
+                    "Dependencies installed",
+                    "Configuration files set up",
                 ],
-            )
-            tasks.append(backend_task)
-
-        # Create Frontend Task
-        if "frontend" in domains:
-            frontend_task = self.create_main_task(
-                title=f"Frontend Development - {project_name}",
-                description=f"UI/UX development for {project_name}. {project_description}",
-                priority=priority,
-                domains=["frontend"],
-                acceptance_criteria=[
-                    "All pages implemented",
-                    "Components created",
-                    "Responsive design working",
-                    "API integration complete",
-                    "User testing passed",
+            },
+            {
+                "phase": "Phase 2",
+                "title": "Core Entity/Component Structure",
+                "description": "Create core entities, database tables, and UI components",
+                "criteria": [
+                    "Core entities/models defined",
+                    "Database tables created",
+                    "Base components built",
+                    "Data structures validated",
                 ],
-            )
-            tasks.append(frontend_task)
-
-        # Create Database Task
-        if "database" in domains:
-            database_task = self.create_main_task(
-                title=f"Database Design & Implementation - {project_name}",
-                description=f"Database schema and procedures for {project_name}. {project_description}",
-                priority=priority,
-                domains=["database"],
-                acceptance_criteria=[
-                    "Schema designed and documented",
-                    "Migrations created",
-                    "CRUD procedures implemented",
-                    "Indexes optimized",
-                    "Backup strategy documented",
+            },
+            {
+                "phase": "Phase 3",
+                "title": "Business Logic & Services",
+                "description": "Implement business logic, services, and core functionality",
+                "criteria": [
+                    "Business logic implemented",
+                    "Service layer created",
+                    "Data validation working",
+                    "Error handling in place",
                 ],
-            )
-            tasks.append(database_task)
+            },
+            {
+                "phase": "Phase 4",
+                "title": "API & Integration",
+                "description": "Build REST APIs, controllers, and frontend integration",
+                "criteria": [
+                    "API endpoints implemented",
+                    "Frontend-backend integration complete",
+                    "Feature components integrated",
+                    "Routing configured",
+                ],
+            },
+            {
+                "phase": "Phase 5",
+                "title": "Security, Testing & Documentation",
+                "description": "Implement security, add tests, and create documentation",
+                "criteria": [
+                    "Security implemented",
+                    "Unit tests written",
+                    "Integration tests passing",
+                    "Documentation complete",
+                ],
+            },
+        ]
 
-        self.log_action(f"Created {len(tasks)} main tasks from project: {project_name}")
+        # Create a task for each phase
+        for phase_data in phases:
+            phase_task = self.create_main_task(
+                title=f"{phase_data['phase']}: {phase_data['title']} - {project_name}",
+                description=f"{phase_data['description']}. {project_description}",
+                priority=priority,
+                domains=domains,  # Each phase task includes all domains
+                acceptance_criteria=phase_data["criteria"],
+            )
+            tasks.append(phase_task)
+
+        self.log_action(f"Created {len(tasks)} phase tasks from project: {project_name}")
         return tasks
 
     def distribute_task(self, task: Dict[str, Any]) -> Dict[str, List[str]]:
