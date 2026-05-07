@@ -1,0 +1,89 @@
+{
+  "team": {
+    "name": "Multi-Domain Development Team",
+    "description": "Agent team for managing tasks across backend, frontend, and database domains",
+    "experimental": true,
+    "coordination_strategy": "sequential"
+  },
+  "agents": [
+    {
+      "id": "task_creator",
+      "name": "Task Creator Agent",
+      "role": "task_creator",
+      "description": "Creates main tasks from project requirements",
+      "model": "claude-opus-4-7",
+      "skills": [
+        "task_definition",
+        "scope_management",
+        "requirement_analysis"
+      ],
+      "output_folder": "tasks",
+      "priority": 1
+    },
+    {
+      "id": "backend_agent",
+      "name": "Backend Agent",
+      "role": "backend_developer",
+      "description": "Creates backend subtasks and implementation plans",
+      "model": "claude-opus-4-7",
+      "skills": [
+        "backend_architecture",
+        "api_design",
+        "database_schema_planning",
+        "authentication_planning"
+      ],
+      "output_folder": "subtasks/backend",
+      "priority": 2
+    },
+    {
+      "id": "frontend_agent",
+      "name": "Frontend Agent",
+      "role": "frontend_developer",
+      "description": "Creates frontend subtasks and UI implementation plans",
+      "model": "claude-opus-4-7",
+      "skills": [
+        "ui_ux_design",
+        "component_architecture",
+        "state_management",
+        "responsive_design"
+      ],
+      "output_folder": "subtasks/frontend",
+      "priority": 3
+    },
+    {
+      "id": "database_agent",
+      "name": "Database Agent",
+      "role": "database_developer",
+      "description": "Creates database subtasks, clarifies descriptions, and organizes outputs",
+      "model": "claude-opus-4-7",
+      "skills": [
+        "database_design",
+        "query_optimization",
+        "schema_design",
+        "task_clarification",
+        "file_organization",
+        "github_integration"
+      ],
+      "output_folder": "subtasks/database",
+      "priority": 4
+    }
+  ],
+  "collaboration": {
+    "task_flow": [
+      "task_creator -> (backend_agent, frontend_agent, database_agent in parallel)"
+    ],
+    "clarification_triggers": [
+      "ambiguous_requirements",
+      "missing_details",
+      "conflicting_specifications"
+    ]
+  },
+  "github": {
+    "enabled": true,
+    "auto_commit": true,
+    "commit_message": "Auto-generated tasks and subtasks from agent team",
+    "push_on_complete": false
+  },
+  "output_format": "markdown",
+  "polling_interval": 5
+}

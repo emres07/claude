@@ -1,0 +1,5 @@
+Bir tane claude code projesi oluşturmak istiyorum. Contexti proje bazında oluştur.
+create an agent team that contains three agent and an agent will create task and tasks subtask for backend,
+ frontend and dbdeveloper and other agent clarify task description and last one create tasks and subtasks file to Task folder and subtask folder.
+Enable agent team experimental. 
+the agent that will create task and subtask will use 
