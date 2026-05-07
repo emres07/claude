@@ -1,0 +1,78 @@
+2026-05-07 23:42:20 [INFO] backend_agent: Initialized Backend Agent (role: backend_developer)
+2026-05-07 23:42:20 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Setup Spring Boot Project - Backend Development - TO DO LİST APP
+2026-05-07 23:42:20 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Create Entities & Repositories - Backend Development - TO DO LİST APP
+2026-05-07 23:42:20 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Implement Services & Business Logic - Backend Development - TO DO LİST APP
+2026-05-07 23:42:20 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Build REST Controllers & APIs - Backend Development - TO DO LİST APP
+2026-05-07 23:42:20 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Add Security & Exception Handling - Backend Development - TO DO LİST APP
+2026-05-07 23:42:20 [INFO] backend_agent: Generated pom.xml for TO DO LİST APP
+2026-05-07 23:42:20 [INFO] backend_agent: Generated entity: User
+2026-05-07 23:42:20 [INFO] backend_agent: Generated entity: Task
+2026-05-07 23:42:20 [INFO] backend_agent: Generated entity: Audit
+2026-05-07 23:42:20 [INFO] backend_agent: Generated repository: UserRepository
+2026-05-07 23:42:20 [INFO] backend_agent: Generated repository: TaskRepository
+2026-05-07 23:42:20 [INFO] backend_agent: Generated repository: AuditRepository
+2026-05-07 23:42:20 [INFO] backend_agent: Generated service: UserService
+2026-05-07 23:42:20 [INFO] backend_agent: Generated service: TaskService
+2026-05-07 23:42:20 [INFO] backend_agent: Generated service: AuditService
+2026-05-07 23:42:20 [INFO] backend_agent: Generated controller: UserController
+2026-05-07 23:42:20 [INFO] backend_agent: Generated controller: TaskController
+2026-05-07 23:42:20 [INFO] backend_agent: Generated controller: AuditController
+2026-05-07 23:42:20 [INFO] backend_agent: Generated subtask 1: pom.xml
+2026-05-07 23:42:20 [INFO] backend_agent: Generated subtask 2: Entities and Repositories
+2026-05-07 23:42:20 [INFO] backend_agent: Generated subtask 3: Services
+2026-05-07 23:42:20 [INFO] backend_agent: Generated subtask 4: Controllers
+2026-05-07 23:42:20 [INFO] backend_agent: Generated subtask 5: Security Configuration
+2026-05-07 23:42:20 [INFO] backend_agent: Backend project structure created: TO DO LİST APP
+2026-05-07 23:48:29 [INFO] backend_agent: Initialized Backend Agent (role: backend_developer)
+2026-05-07 23:48:50 [INFO] backend_agent: Initialized Backend Agent (role: backend_developer)
+2026-05-07 23:48:56 [INFO] backend_agent: Initialized Backend Agent (role: backend_developer)
+2026-05-07 23:48:56 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Setup Spring Boot Project - Backend Development - TO DO LİST APP
+2026-05-07 23:48:56 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Create Entities & Repositories - Backend Development - TO DO LİST APP
+2026-05-07 23:48:56 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Implement Services & Business Logic - Backend Development - TO DO LİST APP
+2026-05-07 23:48:56 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Build REST Controllers & APIs - Backend Development - TO DO LİST APP
+2026-05-07 23:48:56 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Add Security & Exception Handling - Backend Development - TO DO LİST APP
+2026-05-07 23:48:56 [INFO] backend_agent: Generated pom.xml for TO DO LİST APP
+2026-05-07 23:48:56 [INFO] backend_agent: Generated entity: User
+2026-05-07 23:48:56 [INFO] backend_agent: Generated entity: Task
+2026-05-07 23:48:56 [INFO] backend_agent: Generated entity: Audit
+2026-05-07 23:48:56 [INFO] backend_agent: Generated repository: UserRepository
+2026-05-07 23:48:56 [INFO] backend_agent: Generated repository: TaskRepository
+2026-05-07 23:48:56 [INFO] backend_agent: Generated repository: AuditRepository
+2026-05-07 23:48:56 [INFO] backend_agent: Generated service: UserService
+2026-05-07 23:48:56 [INFO] backend_agent: Generated service: TaskService
+2026-05-07 23:48:56 [INFO] backend_agent: Generated service: AuditService
+2026-05-07 23:48:56 [INFO] backend_agent: Generated controller: UserController
+2026-05-07 23:48:56 [INFO] backend_agent: Generated controller: TaskController
+2026-05-07 23:48:56 [INFO] backend_agent: Generated controller: AuditController
+2026-05-07 23:48:56 [INFO] backend_agent: Generated documentation for subtask 1: Setup Spring Boot Project - Backend Development - TO DO LİST APP
+2026-05-07 23:48:56 [INFO] backend_agent: Generated documentation for subtask 2: Create Entities & Repositories - Backend Development - TO DO LİST APP
+2026-05-07 23:48:56 [INFO] backend_agent: Generated documentation for subtask 3: Implement Services & Business Logic - Backend Development - TO DO LİST APP
+2026-05-07 23:48:56 [INFO] backend_agent: Generated documentation for subtask 4: Build REST Controllers & APIs - Backend Development - TO DO LİST APP
+2026-05-07 23:48:56 [INFO] backend_agent: Generated documentation for subtask 5: Add Security & Exception Handling - Backend Development - TO DO LİST APP
+2026-05-07 23:48:56 [INFO] backend_agent: Backend project structure created: TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Initialized Backend Agent (role: backend_developer)
+2026-05-07 23:48:59 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Setup Spring Boot Project - Backend Development - TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Create Entities & Repositories - Backend Development - TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Implement Services & Business Logic - Backend Development - TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Build REST Controllers & APIs - Backend Development - TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Created backend subtask for backend_development___to_do_l�st_app: Add Security & Exception Handling - Backend Development - TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Generated pom.xml for TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Generated entity: User
+2026-05-07 23:48:59 [INFO] backend_agent: Generated entity: Task
+2026-05-07 23:48:59 [INFO] backend_agent: Generated entity: Audit
+2026-05-07 23:48:59 [INFO] backend_agent: Generated repository: UserRepository
+2026-05-07 23:48:59 [INFO] backend_agent: Generated repository: TaskRepository
+2026-05-07 23:48:59 [INFO] backend_agent: Generated repository: AuditRepository
+2026-05-07 23:48:59 [INFO] backend_agent: Generated service: UserService
+2026-05-07 23:48:59 [INFO] backend_agent: Generated service: TaskService
+2026-05-07 23:48:59 [INFO] backend_agent: Generated service: AuditService
+2026-05-07 23:48:59 [INFO] backend_agent: Generated controller: UserController
+2026-05-07 23:48:59 [INFO] backend_agent: Generated controller: TaskController
+2026-05-07 23:48:59 [INFO] backend_agent: Generated controller: AuditController
+2026-05-07 23:48:59 [INFO] backend_agent: Generated documentation for subtask 1: Setup Spring Boot Project - Backend Development - TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Generated documentation for subtask 2: Create Entities & Repositories - Backend Development - TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Generated documentation for subtask 3: Implement Services & Business Logic - Backend Development - TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Generated documentation for subtask 4: Build REST Controllers & APIs - Backend Development - TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Generated documentation for subtask 5: Add Security & Exception Handling - Backend Development - TO DO LİST APP
+2026-05-07 23:48:59 [INFO] backend_agent: Backend project structure created: TO DO LİST APP
+2026-05-07 23:52:26 [INFO] backend_agent: Initialized Backend Agent (role: backend_developer)

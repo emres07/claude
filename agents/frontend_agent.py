@@ -150,116 +150,132 @@ class FrontendAgent(BaseAgent):
         return subtasks
 
     def generate_project_structure(self, project_name: str, subtasks: List[Dict[str, Any]] = None) -> None:
-        """Generate complete frontend project structure with subtask-specific code."""
+        """Generate Next.js project structure based on subtasks."""
         project_folder = self.code_folder / project_name.lower().replace(' ', '_')
         project_folder.mkdir(parents=True, exist_ok=True)
 
-        # Create subtasks folder for organization
-        subtasks_folder = project_folder / "subtasks"
-        subtasks_folder.mkdir(parents=True, exist_ok=True)
+        # Only generate code for subtasks passed in
+        if subtasks:
+            for idx, subtask in enumerate(subtasks, 1):
+                self._generate_subtask_code(project_folder, subtask, idx, project_name)
 
-        # Create package.json
-        package_json_path = project_folder / "package.json"
-        package_json_path.write_text(
-            FrontendSkill.generate_package_json(project_name),
-            encoding="utf-8"
-        )
-        self.created_files.append(package_json_path)
-        self.log_action(f"Generated package.json for {project_name}")
-
-        # Create tsconfig.json
-        tsconfig_path = project_folder / "tsconfig.json"
-        tsconfig_path.write_text(
-            FrontendSkill.generate_tsconfig(),
-            encoding="utf-8"
-        )
-        self.created_files.append(tsconfig_path)
-        self.log_action(f"Generated tsconfig.json")
-
-        # Create .eslintrc.json
-        eslint_path = project_folder / ".eslintrc.json"
-        eslint_path.write_text(
-            FrontendSkill.generate_eslint_config(),
-            encoding="utf-8"
-        )
-        self.created_files.append(eslint_path)
-
-        # Create directories
-        dirs = [
-            "src/components",
-            "src/pages",
-            "src/services",
-            "src/hooks",
-            "src/types",
-            "src/utils",
-            "src/styles",
-            "public",
-        ]
-
-        for dir_name in dirs:
-            (project_folder / dir_name).mkdir(parents=True, exist_ok=True)
-
-        # Create API service
-        services_dir = project_folder / "src/services"
-        api_service_path = services_dir / "api.service.ts"
-        api_service_path.write_text(
-            FrontendSkill.generate_api_service("api"),
-            encoding="utf-8"
-        )
-        self.created_files.append(api_service_path)
-        self.log_action("Generated API service")
-
-        # Create base components
-        components_dir = project_folder / "src/components"
-        base_components = ["button", "form", "card", "modal", "input"]
-
-        for component in base_components:
-            component_path = components_dir / f"{component.title()}.tsx"
-            component_path.write_text(
-                FrontendSkill.generate_component_template(component),
-                encoding="utf-8"
-            )
-            self.created_files.append(component_path)
-            self.log_action(f"Generated component: {component.title()}")
-
-        # Create feature components
-        feature_components = ["UserCard", "TaskList", "TaskForm", "AuditLog"]
-
-        for component in feature_components:
-            component_path = components_dir / f"{component}.tsx"
-            component_path.write_text(
-                FrontendSkill.generate_component_template(component.lower()),
-                encoding="utf-8"
-            )
-            self.created_files.append(component_path)
-            self.log_action(f"Generated component: {component}")
-
-        # Create pages
-        pages_dir = project_folder / "src/pages"
-        pages = ["dashboard", "users", "tasks", "settings", "profile"]
-
-        for page in pages:
-            page_path = pages_dir / f"{page}.tsx"
-            page_path.write_text(
-                FrontendSkill.generate_page_template(page),
-                encoding="utf-8"
-            )
-            self.created_files.append(page_path)
-            self.log_action(f"Generated page: {page}")
-
-        # Create setup script
-        setup_script = project_folder / "setup.sh"
-        setup_script.write_text(
-            FrontendSkill.generate_setup_script(),
-            encoding="utf-8"
-        )
-        self.created_files.append(setup_script)
-
-        # Generate subtask documentation only (code is already in main folder)
+        # Generate subtask documentation
         if subtasks:
             self._generate_subtask_documentation(project_folder, subtasks)
 
         self.log_action(f"Frontend project structure created: {project_name}")
+
+    def _generate_subtask_code(self, project_folder: Path, subtask: Dict[str, Any],
+                               subtask_idx: int, project_name: str) -> None:
+        """Generate code specific to each subtask."""
+
+        if subtask_idx == 1:
+            # Subtask 1: Setup Next.js Project - Configuration files and directories
+            # Create package.json
+            package_json_path = project_folder / "package.json"
+            package_json_path.write_text(
+                FrontendSkill.generate_package_json(project_name),
+                encoding="utf-8"
+            )
+            self.created_files.append(package_json_path)
+            self.log_action(f"Generated package.json for {project_name}")
+
+            # Create tsconfig.json
+            tsconfig_path = project_folder / "tsconfig.json"
+            tsconfig_path.write_text(
+                FrontendSkill.generate_tsconfig(),
+                encoding="utf-8"
+            )
+            self.created_files.append(tsconfig_path)
+            self.log_action(f"Generated tsconfig.json")
+
+            # Create .eslintrc.json
+            eslint_path = project_folder / ".eslintrc.json"
+            eslint_path.write_text(
+                FrontendSkill.generate_eslint_config(),
+                encoding="utf-8"
+            )
+            self.created_files.append(eslint_path)
+
+            # Create directories
+            dirs = [
+                "src/components",
+                "src/pages",
+                "src/services",
+                "src/hooks",
+                "src/types",
+                "src/utils",
+                "src/styles",
+                "public",
+            ]
+            for dir_name in dirs:
+                (project_folder / dir_name).mkdir(parents=True, exist_ok=True)
+
+            # Create setup script
+            setup_script = project_folder / "setup.sh"
+            setup_script.write_text(
+                FrontendSkill.generate_setup_script(),
+                encoding="utf-8"
+            )
+            self.created_files.append(setup_script)
+
+        elif subtask_idx == 2:
+            # Subtask 2: Create Base Components (Button, Form, Card, Modal, Input)
+            components_dir = project_folder / "src/components"
+            components_dir.mkdir(parents=True, exist_ok=True)
+
+            base_components = ["button", "form", "card", "modal", "input"]
+            for component in base_components:
+                component_path = components_dir / f"{component.title()}.tsx"
+                component_path.write_text(
+                    FrontendSkill.generate_component_template(component),
+                    encoding="utf-8"
+                )
+                self.created_files.append(component_path)
+                self.log_action(f"Generated component: {component.title()}")
+
+        elif subtask_idx == 3:
+            # Subtask 3: Build Feature Components (UserCard, TaskList, TaskForm, AuditLog)
+            components_dir = project_folder / "src/components"
+            components_dir.mkdir(parents=True, exist_ok=True)
+
+            feature_components = ["UserCard", "TaskList", "TaskForm", "AuditLog"]
+            for component in feature_components:
+                component_path = components_dir / f"{component}.tsx"
+                component_path.write_text(
+                    FrontendSkill.generate_component_template(component.lower()),
+                    encoding="utf-8"
+                )
+                self.created_files.append(component_path)
+                self.log_action(f"Generated component: {component}")
+
+        elif subtask_idx == 4:
+            # Subtask 4: Implement Pages & Routing (Dashboard, Users, Tasks, Settings, Profile)
+            pages_dir = project_folder / "src/pages"
+            pages_dir.mkdir(parents=True, exist_ok=True)
+
+            pages = ["dashboard", "users", "tasks", "settings", "profile"]
+            for page in pages:
+                page_path = pages_dir / f"{page}.tsx"
+                page_path.write_text(
+                    FrontendSkill.generate_page_template(page),
+                    encoding="utf-8"
+                )
+                self.created_files.append(page_path)
+                self.log_action(f"Generated page: {page}")
+
+        elif subtask_idx == 5:
+            # Subtask 5: API Integration & State Management
+            services_dir = project_folder / "src/services"
+            services_dir.mkdir(parents=True, exist_ok=True)
+
+            api_service_path = services_dir / "api.service.ts"
+            api_service_path.write_text(
+                FrontendSkill.generate_api_service("api"),
+                encoding="utf-8"
+            )
+            self.created_files.append(api_service_path)
+            self.log_action("Generated API service")
 
     def _generate_subtask_documentation(
         self, project_folder: Path, subtasks: List[Dict[str, Any]]

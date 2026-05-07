@@ -149,106 +149,128 @@ class BackendAgent(BaseAgent):
         return subtasks
 
     def generate_project_structure(self, project_name: str, subtasks: List[Dict[str, Any]] = None) -> None:
-        """Generate complete Spring Boot project structure with subtask-specific code."""
+        """Generate Spring Boot project structure based on subtasks."""
         project_folder = self.code_folder / project_name.lower().replace(' ', '_')
         project_folder.mkdir(parents=True, exist_ok=True)
 
-        # Create subtasks folder for organization
-        subtasks_folder = project_folder / "subtasks"
-        subtasks_folder.mkdir(parents=True, exist_ok=True)
-
-        # Create pom.xml
-        pom_path = project_folder / "pom.xml"
-        pom_path.write_text(
-            BackendSkill.generate_pom_xml(project_name),
-            encoding="utf-8"
-        )
-        self.created_files.append(pom_path)
-        self.log_action(f"Generated pom.xml for {project_name}")
-
-        # Create source directories
         base_package = project_name.lower().replace(' ', '').replace('-', '')
-        src_dirs = [
-            f"src/main/java/com/example/{base_package}",
-            f"src/main/java/com/example/{base_package}/entity",
-            f"src/main/java/com/example/{base_package}/repository",
-            f"src/main/java/com/example/{base_package}/service",
-            f"src/main/java/com/example/{base_package}/controller",
-            "src/main/resources",
-            "src/test/java/com/example",
-            "target",
-        ]
 
-        for dir_name in src_dirs:
-            (project_folder / dir_name).mkdir(parents=True, exist_ok=True)
+        # Only generate code for subtasks passed in
+        if subtasks:
+            for idx, subtask in enumerate(subtasks, 1):
+                self._generate_subtask_code(project_folder, subtask, idx, project_name, base_package)
 
-        # Create application.yml
-        app_yml_path = project_folder / "src/main/resources/application.yml"
-        app_yml_path.write_text(
-            BackendSkill.generate_application_yml(),
-            encoding="utf-8"
-        )
-        self.created_files.append(app_yml_path)
-
-        # Create entities for standard project entities
-        entity_dir = project_folder / f"src/main/java/com/example/{base_package}/entity"
-        entities = ["user", "task", "audit"]
-
-        for entity in entities:
-            entity_path = entity_dir / f"{entity.title()}.java"
-            entity_path.write_text(
-                BackendSkill.generate_entity_template(entity),
-                encoding="utf-8"
-            )
-            self.created_files.append(entity_path)
-            self.log_action(f"Generated entity: {entity.title()}")
-
-        # Create repositories for all entities
-        repo_dir = project_folder / f"src/main/java/com/example/{base_package}/repository"
-        for entity in entities:
-            repo_path = repo_dir / f"{entity.title()}Repository.java"
-            repo_path.write_text(
-                BackendSkill.generate_repository_template(entity),
-                encoding="utf-8"
-            )
-            self.created_files.append(repo_path)
-            self.log_action(f"Generated repository: {entity.title()}Repository")
-
-        # Create services for all entities
-        service_dir = project_folder / f"src/main/java/com/example/{base_package}/service"
-        for entity in entities:
-            service_path = service_dir / f"{entity.title()}Service.java"
-            service_path.write_text(
-                BackendSkill.generate_service_template(entity),
-                encoding="utf-8"
-            )
-            self.created_files.append(service_path)
-            self.log_action(f"Generated service: {entity.title()}Service")
-
-        # Create controllers for all entities
-        controller_dir = project_folder / f"src/main/java/com/example/{base_package}/controller"
-        for entity in entities:
-            controller_path = controller_dir / f"{entity.title()}Controller.java"
-            controller_path.write_text(
-                BackendSkill.generate_controller_template(entity),
-                encoding="utf-8"
-            )
-            self.created_files.append(controller_path)
-            self.log_action(f"Generated controller: {entity.title()}Controller")
-
-        # Create setup script
-        setup_script = project_folder / "setup.sh"
-        setup_script.write_text(
-            BackendSkill.generate_pom_maven_setup(),
-            encoding="utf-8"
-        )
-        self.created_files.append(setup_script)
-
-        # Generate subtask documentation only (code is already in main folder)
+        # Generate subtask documentation
         if subtasks:
             self._generate_subtask_documentation(project_folder, subtasks)
 
         self.log_action(f"Backend project structure created: {project_name}")
+
+    def _generate_subtask_code(self, project_folder: Path, subtask: Dict[str, Any],
+                               subtask_idx: int, project_name: str, base_package: str) -> None:
+        """Generate code specific to each subtask."""
+        entities = ["user", "task", "audit"]
+
+        if subtask_idx == 1:
+            # Subtask 1: Setup Spring Boot Project - pom.xml, config, directories
+            pom_path = project_folder / "pom.xml"
+            pom_path.write_text(
+                BackendSkill.generate_pom_xml(project_name),
+                encoding="utf-8"
+            )
+            self.created_files.append(pom_path)
+            self.log_action(f"Generated pom.xml for {project_name}")
+
+            # Create source directories
+            src_dirs = [
+                f"src/main/java/com/example/{base_package}",
+                f"src/main/java/com/example/{base_package}/entity",
+                f"src/main/java/com/example/{base_package}/repository",
+                f"src/main/java/com/example/{base_package}/service",
+                f"src/main/java/com/example/{base_package}/controller",
+                "src/main/resources",
+                "src/test/java/com/example",
+                "target",
+            ]
+            for dir_name in src_dirs:
+                (project_folder / dir_name).mkdir(parents=True, exist_ok=True)
+
+            # Create application.yml
+            app_yml_path = project_folder / "src/main/resources/application.yml"
+            app_yml_path.write_text(
+                BackendSkill.generate_application_yml(),
+                encoding="utf-8"
+            )
+            self.created_files.append(app_yml_path)
+
+            # Create setup script
+            setup_script = project_folder / "setup.sh"
+            setup_script.write_text(
+                BackendSkill.generate_pom_maven_setup(),
+                encoding="utf-8"
+            )
+            self.created_files.append(setup_script)
+
+        elif subtask_idx == 2:
+            # Subtask 2: Create Entities & Repositories
+            entity_dir = project_folder / f"src/main/java/com/example/{base_package}/entity"
+            entity_dir.mkdir(parents=True, exist_ok=True)
+
+            for entity in entities:
+                entity_path = entity_dir / f"{entity.title()}.java"
+                entity_path.write_text(
+                    BackendSkill.generate_entity_template(entity),
+                    encoding="utf-8"
+                )
+                self.created_files.append(entity_path)
+                self.log_action(f"Generated entity: {entity.title()}")
+
+            # Create repositories
+            repo_dir = project_folder / f"src/main/java/com/example/{base_package}/repository"
+            repo_dir.mkdir(parents=True, exist_ok=True)
+
+            for entity in entities:
+                repo_path = repo_dir / f"{entity.title()}Repository.java"
+                repo_path.write_text(
+                    BackendSkill.generate_repository_template(entity),
+                    encoding="utf-8"
+                )
+                self.created_files.append(repo_path)
+                self.log_action(f"Generated repository: {entity.title()}Repository")
+
+        elif subtask_idx == 3:
+            # Subtask 3: Implement Services & Business Logic
+            service_dir = project_folder / f"src/main/java/com/example/{base_package}/service"
+            service_dir.mkdir(parents=True, exist_ok=True)
+
+            for entity in entities:
+                service_path = service_dir / f"{entity.title()}Service.java"
+                service_path.write_text(
+                    BackendSkill.generate_service_template(entity),
+                    encoding="utf-8"
+                )
+                self.created_files.append(service_path)
+                self.log_action(f"Generated service: {entity.title()}Service")
+
+        elif subtask_idx == 4:
+            # Subtask 4: Build REST Controllers & APIs
+            controller_dir = project_folder / f"src/main/java/com/example/{base_package}/controller"
+            controller_dir.mkdir(parents=True, exist_ok=True)
+
+            for entity in entities:
+                controller_path = controller_dir / f"{entity.title()}Controller.java"
+                controller_path.write_text(
+                    BackendSkill.generate_controller_template(entity),
+                    encoding="utf-8"
+                )
+                self.created_files.append(controller_path)
+                self.log_action(f"Generated controller: {entity.title()}Controller")
+
+        elif subtask_idx == 5:
+            # Subtask 5: Add Security & Exception Handling
+            # This could include SecurityConfig, GlobalExceptionHandler, etc.
+            # For now, we'll create placeholder security infrastructure
+            pass
 
     def _generate_subtask_documentation(
         self, project_folder: Path, subtasks: List[Dict[str, Any]]
