@@ -129,8 +129,8 @@ class AgentTeamOrchestrator:
                     self.created_tasks["backend"].append(subtask_file)
                     print(f"  ✓ {subtask['title']}")
 
-                # Generate backend project structure
-                self.backend_agent.generate_project_structure(project_name)
+                # Generate backend project structure with subtasks
+                self.backend_agent.generate_project_structure(project_name, backend_subtasks)
                 print(f"\n  ✓ Generated: pom.xml, entities, repositories, services, controllers\n")
             except Exception as e:
                 print(f"  ❌ Error generating backend code: {str(e)}\n")
@@ -147,8 +147,8 @@ class AgentTeamOrchestrator:
                     self.created_tasks["frontend"].append(subtask_file)
                     print(f"  ✓ {subtask['title']}")
 
-                # Generate frontend project structure
-                self.frontend_agent.generate_project_structure(project_name)
+                # Generate frontend project structure with subtasks
+                self.frontend_agent.generate_project_structure(project_name, frontend_subtasks)
                 print(f"\n  ✓ Generated: package.json, tsconfig, components, services, pages\n")
             except Exception as e:
                 print(f"  ❌ Error generating frontend code: {str(e)}\n")
@@ -165,8 +165,8 @@ class AgentTeamOrchestrator:
                     self.created_tasks["database"].append(subtask_file)
                     print(f"  ✓ {subtask['title']}")
 
-                # Generate database project structure
-                self.database_agent.generate_project_structure(project_name)
+                # Generate database project structure with subtasks
+                self.database_agent.generate_project_structure(project_name, database_subtasks)
                 print(f"\n  ✓ Generated: schema, tables, CRUD procedures, migrations\n")
             except Exception as e:
                 print(f"  ❌ Error generating database code: {str(e)}\n")

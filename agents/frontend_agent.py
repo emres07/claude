@@ -149,10 +149,14 @@ class FrontendAgent(BaseAgent):
 
         return subtasks
 
-    def generate_project_structure(self, project_name: str) -> None:
-        """Generate complete frontend project structure."""
+    def generate_project_structure(self, project_name: str, subtasks: List[Dict[str, Any]] = None) -> None:
+        """Generate complete frontend project structure with subtask-specific code."""
         project_folder = self.code_folder / project_name.lower().replace(' ', '_')
         project_folder.mkdir(parents=True, exist_ok=True)
+
+        # Create subtasks folder for organization
+        subtasks_folder = project_folder / "subtasks"
+        subtasks_folder.mkdir(parents=True, exist_ok=True)
 
         # Create package.json
         package_json_path = project_folder / "package.json"
@@ -250,5 +254,114 @@ class FrontendAgent(BaseAgent):
             encoding="utf-8"
         )
         self.created_files.append(setup_script)
+
+        # Generate subtask-specific implementations
+        if subtasks:
+            self._generate_subtask_implementations(project_folder, subtasks)
+
+        self.log_action(f"Frontend project structure created: {project_name}")
+
+    def _generate_subtask_implementations(
+        self, project_folder: Path, subtasks: List[Dict[str, Any]]
+    ) -> None:
+        """Generate specific code for each subtask."""
+        subtasks_folder = project_folder / "subtasks"
+
+        for idx, subtask in enumerate(subtasks, 1):
+            subtask_name = subtask["title"].lower().replace(" - ", "_").replace(" ", "_")
+            subtask_folder = subtasks_folder / f"{idx:02d}_{subtask_name}"
+            subtask_folder.mkdir(parents=True, exist_ok=True)
+
+            # Create README for subtask
+            readme_content = f"""# {subtask['title']}
+
+## Description
+{subtask['description']}
+
+## Components/Pages
+{chr(10).join([f"- {item}" for item in subtask.get('components', []) + subtask.get('pages', [])])}
+
+## Acceptance Criteria
+- [ ] Implementation complete
+- [ ] Responsive design working
+- [ ] API integration complete
+- [ ] Code reviewed
+
+## Files Generated
+Generated implementation files for this subtask.
+"""
+            readme_path = subtask_folder / "README.md"
+            readme_path.write_text(readme_content, encoding="utf-8")
+            self.created_files.append(readme_path)
+
+            # Subtask 1: Setup
+            if idx == 1:
+                self._generate_subtask_1_setup(subtask_folder)
+            # Subtask 2: Base Components
+            elif idx == 2:
+                self._generate_subtask_2_base_components(subtask_folder)
+            # Subtask 3: Feature Components
+            elif idx == 3:
+                self._generate_subtask_3_feature_components(subtask_folder)
+            # Subtask 4: Pages
+            elif idx == 4:
+                self._generate_subtask_4_pages(subtask_folder)
+            # Subtask 5: API Integration
+            elif idx == 5:
+                self._generate_subtask_5_api_integration(subtask_folder)
+
+    def _generate_subtask_1_setup(self, subtask_folder: Path) -> None:
+        """Generate Next.js setup files."""
+        package_path = subtask_folder / "package.json"
+        package_path.write_text(FrontendSkill.generate_package_json("setup"), encoding="utf-8")
+        self.created_files.append(package_path)
+        self.log_action("Generated subtask 1: Setup files")
+
+    def _generate_subtask_2_base_components(self, subtask_folder: Path) -> None:
+        """Generate base components."""
+        components_dir = subtask_folder / "components"
+        components_dir.mkdir(parents=True, exist_ok=True)
+
+        for component in ["button", "form", "card", "modal", "input"]:
+            comp_path = components_dir / f"{component.title()}.tsx"
+            comp_path.write_text(FrontendSkill.generate_component_template(component), encoding="utf-8")
+            self.created_files.append(comp_path)
+
+        self.log_action("Generated subtask 2: Base Components")
+
+    def _generate_subtask_3_feature_components(self, subtask_folder: Path) -> None:
+        """Generate feature components."""
+        components_dir = subtask_folder / "components"
+        components_dir.mkdir(parents=True, exist_ok=True)
+
+        for component in ["user_card", "task_list", "task_form", "audit_log"]:
+            comp_path = components_dir / f"{component.title()}.tsx"
+            comp_path.write_text(FrontendSkill.generate_component_template(component), encoding="utf-8")
+            self.created_files.append(comp_path)
+
+        self.log_action("Generated subtask 3: Feature Components")
+
+    def _generate_subtask_4_pages(self, subtask_folder: Path) -> None:
+        """Generate pages."""
+        pages_dir = subtask_folder / "pages"
+        pages_dir.mkdir(parents=True, exist_ok=True)
+
+        for page in ["dashboard", "users", "tasks", "settings", "profile"]:
+            page_path = pages_dir / f"{page}.tsx"
+            page_path.write_text(FrontendSkill.generate_page_template(page), encoding="utf-8")
+            self.created_files.append(page_path)
+
+        self.log_action("Generated subtask 4: Pages")
+
+    def _generate_subtask_5_api_integration(self, subtask_folder: Path) -> None:
+        """Generate API integration files."""
+        services_dir = subtask_folder / "services"
+        services_dir.mkdir(parents=True, exist_ok=True)
+
+        api_path = services_dir / "api.service.ts"
+        api_path.write_text(FrontendSkill.generate_api_service("api"), encoding="utf-8")
+        self.created_files.append(api_path)
+
+        self.log_action("Generated subtask 5: API Integration")
 
         self.log_action(f"Frontend project structure created: {project_name}")

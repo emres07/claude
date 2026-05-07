@@ -148,10 +148,14 @@ class BackendAgent(BaseAgent):
 
         return subtasks
 
-    def generate_project_structure(self, project_name: str) -> None:
-        """Generate complete Spring Boot project structure."""
+    def generate_project_structure(self, project_name: str, subtasks: List[Dict[str, Any]] = None) -> None:
+        """Generate complete Spring Boot project structure with subtask-specific code."""
         project_folder = self.code_folder / project_name.lower().replace(' ', '_')
         project_folder.mkdir(parents=True, exist_ok=True)
+
+        # Create subtasks folder for organization
+        subtasks_folder = project_folder / "subtasks"
+        subtasks_folder.mkdir(parents=True, exist_ok=True)
 
         # Create pom.xml
         pom_path = project_folder / "pom.xml"
@@ -240,4 +244,141 @@ class BackendAgent(BaseAgent):
         )
         self.created_files.append(setup_script)
 
+        # Generate subtask-specific implementations
+        if subtasks:
+            self._generate_subtask_implementations(project_folder, subtasks, base_package)
+
         self.log_action(f"Backend project structure created: {project_name}")
+
+    def _generate_subtask_implementations(
+        self, project_folder: Path, subtasks: List[Dict[str, Any]], base_package: str
+    ) -> None:
+        """Generate specific code for each subtask."""
+        subtasks_folder = project_folder / "subtasks"
+
+        for idx, subtask in enumerate(subtasks, 1):
+            subtask_name = subtask["title"].lower().replace(" - ", "_").replace(" ", "_")
+            subtask_folder = subtasks_folder / f"{idx:02d}_{subtask_name}"
+            subtask_folder.mkdir(parents=True, exist_ok=True)
+
+            # Create README for subtask
+            readme_content = f"""# {subtask['title']}
+
+## Description
+{subtask['description']}
+
+## Acceptance Criteria
+- [ ] Implementation complete
+- [ ] Tests written
+- [ ] Documentation updated
+- [ ] Code reviewed
+
+## Files Generated
+Generated implementation files for this subtask.
+"""
+            readme_path = subtask_folder / "README.md"
+            readme_path.write_text(readme_content, encoding="utf-8")
+            self.created_files.append(readme_path)
+
+            # Subtask 1: Setup Spring Boot
+            if idx == 1:
+                self._generate_subtask_1_setup(subtask_folder, base_package)
+            # Subtask 2: Entities & Repositories
+            elif idx == 2:
+                self._generate_subtask_2_entities_repos(subtask_folder, base_package)
+            # Subtask 3: Services
+            elif idx == 3:
+                self._generate_subtask_3_services(subtask_folder, base_package)
+            # Subtask 4: Controllers
+            elif idx == 4:
+                self._generate_subtask_4_controllers(subtask_folder, base_package)
+            # Subtask 5: Security
+            elif idx == 5:
+                self._generate_subtask_5_security(subtask_folder, base_package)
+
+    def _generate_subtask_1_setup(self, subtask_folder: Path, base_package: str) -> None:
+        """Generate Spring Boot setup files."""
+        pom_path = subtask_folder / "pom.xml"
+        pom_path.write_text(BackendSkill.generate_pom_xml("setup"), encoding="utf-8")
+        self.created_files.append(pom_path)
+        self.log_action("Generated subtask 1: pom.xml")
+
+    def _generate_subtask_2_entities_repos(self, subtask_folder: Path, base_package: str) -> None:
+        """Generate JPA entities and repositories."""
+        entities_dir = subtask_folder / "entities"
+        entities_dir.mkdir(parents=True, exist_ok=True)
+
+        repos_dir = subtask_folder / "repositories"
+        repos_dir.mkdir(parents=True, exist_ok=True)
+
+        for entity in ["user", "task", "audit"]:
+            # Create entity
+            entity_path = entities_dir / f"{entity.title()}.java"
+            entity_path.write_text(BackendSkill.generate_entity_template(entity), encoding="utf-8")
+            self.created_files.append(entity_path)
+
+            # Create repository
+            repo_path = repos_dir / f"{entity.title()}Repository.java"
+            repo_path.write_text(BackendSkill.generate_repository_template(entity), encoding="utf-8")
+            self.created_files.append(repo_path)
+
+        self.log_action("Generated subtask 2: Entities and Repositories")
+
+    def _generate_subtask_3_services(self, subtask_folder: Path, base_package: str) -> None:
+        """Generate service layer."""
+        services_dir = subtask_folder / "services"
+        services_dir.mkdir(parents=True, exist_ok=True)
+
+        for entity in ["user", "task", "audit"]:
+            service_path = services_dir / f"{entity.title()}Service.java"
+            service_path.write_text(BackendSkill.generate_service_template(entity), encoding="utf-8")
+            self.created_files.append(service_path)
+
+        self.log_action("Generated subtask 3: Services")
+
+    def _generate_subtask_4_controllers(self, subtask_folder: Path, base_package: str) -> None:
+        """Generate REST controllers."""
+        controllers_dir = subtask_folder / "controllers"
+        controllers_dir.mkdir(parents=True, exist_ok=True)
+
+        for entity in ["user", "task", "audit"]:
+            controller_path = controllers_dir / f"{entity.title()}Controller.java"
+            controller_path.write_text(BackendSkill.generate_controller_template(entity), encoding="utf-8")
+            self.created_files.append(controller_path)
+
+        self.log_action("Generated subtask 4: Controllers")
+
+    def _generate_subtask_5_security(self, subtask_folder: Path, base_package: str) -> None:
+        """Generate security configuration."""
+        security_dir = subtask_folder / "security"
+        security_dir.mkdir(parents=True, exist_ok=True)
+
+        security_config = """package com.example.security;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeRequests()
+            .antMatchers("/api/v1/public/**").permitAll()
+            .antMatchers("/api/v1/**").authenticated()
+            .and()
+            .httpBasic()
+            .and()
+            .csrf().disable();
+        return http.build();
+    }
+}
+"""
+        security_path = security_dir / "SecurityConfig.java"
+        security_path.write_text(security_config, encoding="utf-8")
+        self.created_files.append(security_path)
+
+        self.log_action("Generated subtask 5: Security Configuration")
