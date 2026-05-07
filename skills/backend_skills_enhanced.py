@@ -361,7 +361,7 @@ public class UserController {{
      */
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<UserProfileResponse>> getUserById(@PathVariable Long id) {{
-        log.info("GET /api/v1/users/{{}}} - Fetching user", id);
+        log.info("GET /api/v1/users/{{}} - Fetching user", id);
 
         UserProfileResponse response = userService.getUserById(id);
 
@@ -391,7 +391,7 @@ public class UserController {{
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateUser(
             @PathVariable Long id,
             @Valid @RequestBody UserProfileRequest request) {{
-        log.info("PUT /api/v1/users/{{}}} - Updating user", id);
+        log.info("PUT /api/v1/users/{{}} - Updating user", id);
 
         UserProfileResponse response = userService.updateUserProfile(id, request);
 
@@ -404,7 +404,7 @@ public class UserController {{
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deactivateUser(@PathVariable Long id) {{
-        log.info("DELETE /api/v1/users/{{}}} - Deactivating user", id);
+        log.info("DELETE /api/v1/users/{{}} - Deactivating user", id);
 
         userService.deactivateUser(id);
 
