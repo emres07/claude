@@ -214,7 +214,7 @@ const {pascal_case}: React.FC<{pascal_case}Props> = () => {{
         <h1 className="text-3xl font-bold">{pascal_case}</h1>
       </header>
       <main className="container mx-auto p-4">
-        {/* Page content */}}
+        {{/* Page content */}}
       </main>
     </div>
   );
