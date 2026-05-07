@@ -85,6 +85,73 @@ class TaskCreatorAgent(BaseAgent):
         self.log_action(f"Created main task: {task['title']}")
         return str(filepath)
 
+    def create_tasks_from_project(
+        self,
+        project_name: str,
+        project_description: str,
+        priority: str = "medium",
+        domains: List[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Break down a project into multiple main tasks by domain."""
+        if domains is None:
+            domains = ["backend", "frontend", "database"]
+
+        tasks = []
+
+        # Create Backend Task
+        if "backend" in domains:
+            backend_task = self.create_main_task(
+                title=f"Backend Development - {project_name}",
+                description=f"Backend API development for {project_name}. {project_description}",
+                priority=priority,
+                domains=["backend"],
+                acceptance_criteria=[
+                    "REST APIs implemented",
+                    "Database integration complete",
+                    "Authentication/Authorization working",
+                    "Error handling implemented",
+                    "API documentation complete",
+                ],
+            )
+            tasks.append(backend_task)
+
+        # Create Frontend Task
+        if "frontend" in domains:
+            frontend_task = self.create_main_task(
+                title=f"Frontend Development - {project_name}",
+                description=f"UI/UX development for {project_name}. {project_description}",
+                priority=priority,
+                domains=["frontend"],
+                acceptance_criteria=[
+                    "All pages implemented",
+                    "Components created",
+                    "Responsive design working",
+                    "API integration complete",
+                    "User testing passed",
+                ],
+            )
+            tasks.append(frontend_task)
+
+        # Create Database Task
+        if "database" in domains:
+            database_task = self.create_main_task(
+                title=f"Database Design & Implementation - {project_name}",
+                description=f"Database schema and procedures for {project_name}. {project_description}",
+                priority=priority,
+                domains=["database"],
+                acceptance_criteria=[
+                    "Schema designed and documented",
+                    "Migrations created",
+                    "CRUD procedures implemented",
+                    "Indexes optimized",
+                    "Backup strategy documented",
+                ],
+            )
+            tasks.append(database_task)
+
+        self.log_action(f"Created {len(tasks)} main tasks from project: {project_name}")
+        return tasks
+
     def distribute_task(self, task: Dict[str, Any]) -> Dict[str, List[str]]:
         """Distribute task to relevant domain agents."""
         distribution = {

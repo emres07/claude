@@ -71,34 +71,53 @@ class AgentTeamOrchestrator:
         return project
 
     def process_project(self, project: Dict[str, Any]) -> None:
-        """Process a single project through all agents."""
+        """Process a single project by breaking it into multiple domain-specific tasks."""
         print(f"\n{'='*70}")
         print(f"Processing Project: {project['name']}")
         print(f"Priority: {project.get('priority', 'medium').upper()}")
         print(f"Description: {project['description']}")
         print(f"{'='*70}\n")
 
-        # Task Creator Agent: Create main task from project
-        print("📋 Task Creator Agent is working...")
-        task = self.task_creator.create_main_task(
-            title=project['name'],
-            description=project['description'],
+        # Task Creator Agent: Break project into multiple main tasks (one per domain)
+        print("📋 Task Creator Agent is breaking project into domain tasks...")
+        tasks = self.task_creator.create_tasks_from_project(
+            project_name=project['name'],
+            project_description=project['description'],
             priority=project.get('priority', 'medium'),
             domains=project.get('domains', ['backend', 'frontend', 'database']),
-            acceptance_criteria=[],
         )
 
-        task_file = self.task_creator.save_task(task)
-        self.created_tasks["tasks"].append(task_file)
-        print(f"  ✓ Main task created: {project['name']}\n")
+        # Save all main tasks
+        main_task_files = []
+        for task in tasks:
+            task_file = self.task_creator.save_task(task)
+            main_task_files.append(task_file)
+            self.created_tasks["tasks"].append(task_file)
+            print(f"  ✓ Main task created: {task['title']}")
 
-        # Clarify task description (Database Agent responsibility)
-        print("🔍 Database Agent is clarifying requirements...")
+        print()
+
+        # Process each task with its specific domain agent
+        for task in tasks:
+            self._process_domain_task(task, project)
+
+    def _process_domain_task(self, task: Dict[str, Any], project: Dict[str, Any]) -> None:
+        """Process a domain-specific task and create its subtasks."""
+        domain = task["domains"][0]  # Each task has exactly one domain
+        project_name = project['name']
+
+        print(f"\n{'─'*70}")
+        print(f"Task: {task['title']}")
+        print(f"Domain: {domain.upper()}")
+        print(f"{'─'*70}\n")
+
+        # Clarify task description
+        print("🔍 Clarifying task requirements...")
         clarified_task = self.database_agent.clarify_task_description(task)
-        print(f"  ✓ Task requirements clarified\n")
+        print(f"  ✓ Task clarified: {task['title']}\n")
 
-        # Backend Agent: Create backend subtasks and code
-        if "backend" in project.get('domains', []):
+        # Process by domain
+        if domain == "backend":
             print("🔧 Backend Agent is creating Java/Spring Boot code...")
             try:
                 backend_subtasks = self.backend_agent.create_subtasks_from_task(
@@ -111,14 +130,12 @@ class AgentTeamOrchestrator:
                     print(f"  ✓ {subtask['title']}")
 
                 # Generate backend project structure
-                self.backend_agent.generate_project_structure(project['name'])
-                print(f"  ✓ Generated: pom.xml, entities, repositories, services, controllers")
+                self.backend_agent.generate_project_structure(project_name)
+                print(f"\n  ✓ Generated: pom.xml, entities, repositories, services, controllers\n")
             except Exception as e:
-                print(f"  ❌ Error generating backend code: {str(e)}")
-            print()
+                print(f"  ❌ Error generating backend code: {str(e)}\n")
 
-        # Frontend Agent: Create frontend subtasks and code
-        if "frontend" in project.get('domains', []):
+        elif domain == "frontend":
             print("🎨 Frontend Agent is creating React/Next.js & TypeScript code...")
             try:
                 frontend_subtasks = self.frontend_agent.create_subtasks_from_task(
@@ -131,14 +148,12 @@ class AgentTeamOrchestrator:
                     print(f"  ✓ {subtask['title']}")
 
                 # Generate frontend project structure
-                self.frontend_agent.generate_project_structure(project['name'])
-                print(f"  ✓ Generated: package.json, tsconfig, components, services, pages")
+                self.frontend_agent.generate_project_structure(project_name)
+                print(f"\n  ✓ Generated: package.json, tsconfig, components, services, pages\n")
             except Exception as e:
-                print(f"  ❌ Error generating frontend code: {str(e)}")
-            print()
+                print(f"  ❌ Error generating frontend code: {str(e)}\n")
 
-        # Database Agent: Create database subtasks and code
-        if "database" in project.get('domains', []):
+        elif domain == "database":
             print("💾 Database Agent is creating Oracle/PL-SQL code...")
             try:
                 database_subtasks = self.database_agent.create_subtasks_from_task(
@@ -151,13 +166,10 @@ class AgentTeamOrchestrator:
                     print(f"  ✓ {subtask['title']}")
 
                 # Generate database project structure
-                self.database_agent.generate_project_structure(project['name'])
-                print(f"  ✓ Generated: schema, tables, CRUD procedures, migrations")
+                self.database_agent.generate_project_structure(project_name)
+                print(f"\n  ✓ Generated: schema, tables, CRUD procedures, migrations\n")
             except Exception as e:
-                print(f"  ❌ Error generating database code: {str(e)}")
-            print()
-
-        print(f"✅ Project '{project['name']}' processing complete!\n")
+                print(f"  ❌ Error generating database code: {str(e)}\n")
 
     def process_all_projects(self) -> None:
         """Process all projects through the agent team."""
