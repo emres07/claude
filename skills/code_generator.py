@@ -254,7 +254,7 @@ const {component_name}: React.FC<{component_name}Props> = ({{ onSuccess }}) => {
   }};
 
   return (
-    <div className="{component_name.toLowerCase()}">
+    <div className="form-container">
       <h2>{component_name}</h2>
       {{error && <div className="error">{{error}}</div>}}
       <form onSubmit={{handleSubmit}}>
@@ -289,7 +289,7 @@ const {component_name}: React.FC<{component_name}Props> = (props) => {{
   if (error) return <div className="error">{{error}}</div>;
 
   return (
-    <div className="{component_name.toLowerCase()}">
+    <div className="component">
       <h2>{component_name}</h2>
       {{/* TODO: Render {component_name} content */}}
     </div>
