@@ -100,52 +100,61 @@ class AgentTeamOrchestrator:
         # Backend Agent: Create backend subtasks and code
         if "backend" in project.get('domains', []):
             print("🔧 Backend Agent is creating Java/Spring Boot code...")
-            backend_subtasks = self.backend_agent.create_subtasks_from_task(
-                task_id=task["id"],
-                task_title=task["title"],
-            )
-            for subtask in backend_subtasks:
-                subtask_file = self.backend_agent.save_subtask(subtask)
-                self.created_tasks["backend"].append(subtask_file)
-                print(f"  ✓ {subtask['title']}")
+            try:
+                backend_subtasks = self.backend_agent.create_subtasks_from_task(
+                    task_id=task["id"],
+                    task_title=task["title"],
+                )
+                for subtask in backend_subtasks:
+                    subtask_file = self.backend_agent.save_subtask(subtask)
+                    self.created_tasks["backend"].append(subtask_file)
+                    print(f"  ✓ {subtask['title']}")
 
-            # Generate backend project structure
-            self.backend_agent.generate_project_structure(project['name'])
-            print(f"  ✓ Generated: pom.xml, entities, repositories, services, controllers")
+                # Generate backend project structure
+                self.backend_agent.generate_project_structure(project['name'])
+                print(f"  ✓ Generated: pom.xml, entities, repositories, services, controllers")
+            except Exception as e:
+                print(f"  ❌ Error generating backend code: {str(e)}")
             print()
 
         # Frontend Agent: Create frontend subtasks and code
         if "frontend" in project.get('domains', []):
             print("🎨 Frontend Agent is creating React/Next.js & TypeScript code...")
-            frontend_subtasks = self.frontend_agent.create_subtasks_from_task(
-                task_id=task["id"],
-                task_title=task["title"],
-            )
-            for subtask in frontend_subtasks:
-                subtask_file = self.frontend_agent.save_subtask(subtask)
-                self.created_tasks["frontend"].append(subtask_file)
-                print(f"  ✓ {subtask['title']}")
+            try:
+                frontend_subtasks = self.frontend_agent.create_subtasks_from_task(
+                    task_id=task["id"],
+                    task_title=task["title"],
+                )
+                for subtask in frontend_subtasks:
+                    subtask_file = self.frontend_agent.save_subtask(subtask)
+                    self.created_tasks["frontend"].append(subtask_file)
+                    print(f"  ✓ {subtask['title']}")
 
-            # Generate frontend project structure
-            self.frontend_agent.generate_project_structure(project['name'])
-            print(f"  ✓ Generated: package.json, tsconfig, components, services, pages")
+                # Generate frontend project structure
+                self.frontend_agent.generate_project_structure(project['name'])
+                print(f"  ✓ Generated: package.json, tsconfig, components, services, pages")
+            except Exception as e:
+                print(f"  ❌ Error generating frontend code: {str(e)}")
             print()
 
         # Database Agent: Create database subtasks and code
         if "database" in project.get('domains', []):
             print("💾 Database Agent is creating Oracle/PL-SQL code...")
-            database_subtasks = self.database_agent.create_subtasks_from_task(
-                task_id=task["id"],
-                task_title=task["title"],
-            )
-            for subtask in database_subtasks:
-                subtask_file = self.database_agent.save_subtask(subtask)
-                self.created_tasks["database"].append(subtask_file)
-                print(f"  ✓ {subtask['title']}")
+            try:
+                database_subtasks = self.database_agent.create_subtasks_from_task(
+                    task_id=task["id"],
+                    task_title=task["title"],
+                )
+                for subtask in database_subtasks:
+                    subtask_file = self.database_agent.save_subtask(subtask)
+                    self.created_tasks["database"].append(subtask_file)
+                    print(f"  ✓ {subtask['title']}")
 
-            # Generate database project structure
-            self.database_agent.generate_project_structure(project['name'])
-            print(f"  ✓ Generated: schema, tables, CRUD procedures, migrations")
+                # Generate database project structure
+                self.database_agent.generate_project_structure(project['name'])
+                print(f"  ✓ Generated: schema, tables, CRUD procedures, migrations")
+            except Exception as e:
+                print(f"  ❌ Error generating database code: {str(e)}")
             print()
 
         print(f"✅ Project '{project['name']}' processing complete!\n")
@@ -161,7 +170,13 @@ class AgentTeamOrchestrator:
         print(f"{'='*70}\n")
 
         for project in self.projects:
-            self.process_project(project)
+            try:
+                self.process_project(project)
+            except Exception as e:
+                print(f"❌ Error processing project '{project.get('name', 'Unknown')}': {str(e)}")
+                import traceback
+                traceback.print_exc()
+                continue
 
         print(f"\n{'='*70}")
         print(f"✅ ALL PROJECTS PROCESSED SUCCESSFULLY")
@@ -172,6 +187,14 @@ class AgentTeamOrchestrator:
         print(f"\n{'='*60}")
         print("Organizing all outputs...")
         print(f"{'='*60}\n")
+
+        # Aggregate files from all agents
+        all_agents_files = (
+            self.task_creator.get_created_files() +
+            self.backend_agent.get_created_files() +
+            self.frontend_agent.get_created_files() +
+            self.database_agent.get_created_files()
+        )
 
         summary_file = self.database_agent.organize_and_save_summary(
             all_tasks=self.created_tasks,
@@ -185,7 +208,16 @@ class AgentTeamOrchestrator:
         print("GitHub Publishing")
         print(f"{'='*60}\n")
 
+        # Aggregate files from all agents for commit
+        all_files = (
+            self.task_creator.get_created_files() +
+            self.backend_agent.get_created_files() +
+            self.frontend_agent.get_created_files() +
+            self.database_agent.get_created_files()
+        )
+
         commit_data = self.database_agent.prepare_github_commit()
+        commit_data["files"] = all_files
 
         print(f"Commit Message: {commit_data['commit_message']}")
         print(f"Files to commit: {len(commit_data['files'])}")
@@ -390,13 +422,18 @@ Each agent generates production-ready code in their folder:
         print(f"   📁 frontend/  - React/Next.js TypeScript code")
         print(f"   📁 dbadmin/   - Oracle/PL-SQL scripts\n")
 
-        orchestrator.process_all_projects()
-        orchestrator.organize_outputs()
+        try:
+            orchestrator.process_all_projects()
+            orchestrator.organize_outputs()
 
-        if args.publish or args.github_repo:
-            orchestrator.publish_to_github(repo_url=args.github_repo)
+            if args.publish or args.github_repo:
+                orchestrator.publish_to_github(repo_url=args.github_repo)
 
-        orchestrator.print_summary()
+            orchestrator.print_summary()
+        except Exception as e:
+            print(f"\n❌ Error during project processing: {str(e)}")
+            import traceback
+            traceback.print_exc()
     else:
         print("❌ No projects to process!")
         print("\n🎯 Usage examples:")
