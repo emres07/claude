@@ -49,10 +49,10 @@ class AgentTeamOrchestrator:
         if projects_path.exists():
             with open(projects_path) as f:
                 self.projects = json.load(f)
-                print(f"✓ Loaded {len(self.projects)} projects from {projects_file}\n")
+                print(f"[OK] Loaded {len(self.projects)} projects from {projects_file}\n")
                 return self.projects
         else:
-            print(f"⚠ No projects file found at {projects_file}")
+            print(f"[WARN] No projects file found at {projects_file}")
             return []
 
     def add_project(self, name: str, description: str, priority: str = "medium",
@@ -79,7 +79,7 @@ class AgentTeamOrchestrator:
         print(f"{'='*70}\n")
 
         # Task Creator Agent: Break project into multiple main tasks (one per domain)
-        print("📋 Task Creator Agent is breaking project into domain tasks...")
+        print("[*] Task Creator Agent is breaking project into domain tasks...")
         tasks = self.task_creator.create_tasks_from_project(
             project_name=project['name'],
             project_description=project['description'],
@@ -93,7 +93,7 @@ class AgentTeamOrchestrator:
             task_file = self.task_creator.save_task(task)
             main_task_files.append(task_file)
             self.created_tasks["tasks"].append(task_file)
-            print(f"  ✓ Main task created: {task['title']}")
+            print(f"  [OK] Main task created: {task['title']}")
 
         print()
 
@@ -106,19 +106,19 @@ class AgentTeamOrchestrator:
         domain = task["domains"][0]  # Each task has exactly one domain
         project_name = project['name']
 
-        print(f"\n{'─'*70}")
+        print(f"\n{'-'*70}")
         print(f"Task: {task['title']}")
         print(f"Domain: {domain.upper()}")
-        print(f"{'─'*70}\n")
+        print(f"{'-'*70}\n")
 
         # Clarify task description
-        print("🔍 Clarifying task requirements...")
+        print("[CHECK] Clarifying task requirements...")
         clarified_task = self.database_agent.clarify_task_description(task)
-        print(f"  ✓ Task clarified: {task['title']}\n")
+        print(f"  [OK] Task clarified: {task['title']}\n")
 
         # Process by domain
         if domain == "backend":
-            print("🔧 Backend Agent is creating Java/Spring Boot code...")
+            print("[TOOL] Backend Agent is creating Java/Spring Boot code...")
             try:
                 backend_subtasks = self.backend_agent.create_subtasks_from_task(
                     task_id=task["id"],
@@ -127,16 +127,16 @@ class AgentTeamOrchestrator:
                 for subtask in backend_subtasks:
                     subtask_file = self.backend_agent.save_subtask(subtask)
                     self.created_tasks["backend"].append(subtask_file)
-                    print(f"  ✓ {subtask['title']}")
+                    print(f"  [OK] {subtask['title']}")
 
                 # Generate backend project structure with subtasks
                 self.backend_agent.generate_project_structure(project_name, backend_subtasks)
-                print(f"\n  ✓ Generated: pom.xml, entities, repositories, services, controllers\n")
+                print(f"\n  [OK] Generated: pom.xml, entities, repositories, services, controllers\n")
             except Exception as e:
-                print(f"  ❌ Error generating backend code: {str(e)}\n")
+                print(f"  [ERROR] Error generating backend code: {str(e)}\n")
 
         elif domain == "frontend":
-            print("🎨 Frontend Agent is creating React/Next.js & TypeScript code...")
+            print("[ART] Frontend Agent is creating React/Next.js & TypeScript code...")
             try:
                 frontend_subtasks = self.frontend_agent.create_subtasks_from_task(
                     task_id=task["id"],
@@ -145,16 +145,16 @@ class AgentTeamOrchestrator:
                 for subtask in frontend_subtasks:
                     subtask_file = self.frontend_agent.save_subtask(subtask)
                     self.created_tasks["frontend"].append(subtask_file)
-                    print(f"  ✓ {subtask['title']}")
+                    print(f"  [OK] {subtask['title']}")
 
                 # Generate frontend project structure with subtasks
                 self.frontend_agent.generate_project_structure(project_name, frontend_subtasks)
-                print(f"\n  ✓ Generated: package.json, tsconfig, components, services, pages\n")
+                print(f"\n  [OK] Generated: package.json, tsconfig, components, services, pages\n")
             except Exception as e:
-                print(f"  ❌ Error generating frontend code: {str(e)}\n")
+                print(f"  [ERROR] Error generating frontend code: {str(e)}\n")
 
         elif domain == "database":
-            print("💾 Database Agent is creating Oracle/PL-SQL code...")
+            print("[DB] Database Agent is creating Oracle/PL-SQL code...")
             try:
                 database_subtasks = self.database_agent.create_subtasks_from_task(
                     task_id=task["id"],
@@ -163,35 +163,35 @@ class AgentTeamOrchestrator:
                 for subtask in database_subtasks:
                     subtask_file = self.database_agent.save_subtask(subtask)
                     self.created_tasks["database"].append(subtask_file)
-                    print(f"  ✓ {subtask['title']}")
+                    print(f"  [OK] {subtask['title']}")
 
                 # Generate database project structure with subtasks
                 self.database_agent.generate_project_structure(project_name, database_subtasks)
-                print(f"\n  ✓ Generated: schema, tables, CRUD procedures, migrations\n")
+                print(f"\n  [OK] Generated: schema, tables, CRUD procedures, migrations\n")
             except Exception as e:
-                print(f"  ❌ Error generating database code: {str(e)}\n")
+                print(f"  [ERROR] Error generating database code: {str(e)}\n")
 
     def process_all_projects(self) -> None:
         """Process all projects through the agent team."""
         if not self.projects:
-            print("⚠ No projects to process!")
+            print("[WARN] No projects to process!")
             return
 
         print(f"\n{'='*70}")
-        print(f"🚀 STARTING AGENT TEAM PROCESSING FOR {len(self.projects)} PROJECT(S)")
+        print(f"[>>] STARTING AGENT TEAM PROCESSING FOR {len(self.projects)} PROJECT(S)")
         print(f"{'='*70}\n")
 
         for project in self.projects:
             try:
                 self.process_project(project)
             except Exception as e:
-                print(f"❌ Error processing project '{project.get('name', 'Unknown')}': {str(e)}")
+                print(f"[ERROR] Error processing project '{project.get('name', 'Unknown')}': {str(e)}")
                 import traceback
                 traceback.print_exc()
                 continue
 
         print(f"\n{'='*70}")
-        print(f"✅ ALL PROJECTS PROCESSED SUCCESSFULLY")
+        print(f"[YES] ALL PROJECTS PROCESSED SUCCESSFULLY")
         print(f"{'='*70}\n")
 
     def organize_outputs(self) -> None:
@@ -212,7 +212,7 @@ class AgentTeamOrchestrator:
             all_tasks=self.created_tasks,
             output_folder=".",
         )
-        print(f"✓ Project summary created: {summary_file}")
+        print(f"[OK] Project summary created: {summary_file}")
 
     def publish_to_github(self, repo_url: str = None) -> None:
         """Prepare for GitHub publishing."""
@@ -256,7 +256,7 @@ class AgentTeamOrchestrator:
         print(f"Frontend subtasks: {len(self.created_tasks['frontend'])}")
         print(f"Database subtasks: {len(self.created_tasks['database'])}")
 
-        print(f"\n📁 Output folders:")
+        print(f"\n[DIR] Output folders:")
         print(f"  • tasks/")
         print(f"  • subtasks/backend/")
         print(f"  • subtasks/frontend/")
@@ -266,13 +266,13 @@ class AgentTeamOrchestrator:
 def get_interactive_project_input() -> Dict[str, Any]:
     """Get project input interactively from user."""
     print("\n" + "="*70)
-    print("🚀 AGENT TEAM PROJECT INPUT")
+    print("[>>] AGENT TEAM PROJECT INPUT")
     print("="*70 + "\n")
 
     # Get project name
     name = input("📝 Project name: ").strip()
     if not name:
-        print("❌ Project name cannot be empty!")
+        print("[ERROR] Project name cannot be empty!")
         return None
 
     # Get description
@@ -290,7 +290,7 @@ def get_interactive_project_input() -> Dict[str, Any]:
     priority = priority_map.get(priority_input, "medium")
 
     # Get domains
-    print("\n🔧 Select domains (comma-separated or all):")
+    print("\n[TOOL] Select domains (comma-separated or all):")
     print("  backend   - Java, Spring Boot, Hibernate, Maven")
     print("  frontend  - React, Next.js, Vite, TypeScript, Axios")
     print("  database  - Oracle, PL/SQL, Schema, CRUD")
@@ -313,7 +313,7 @@ def get_interactive_project_input() -> Dict[str, Any]:
         "domains": domains,
     }
 
-    print("\n✅ Project configured:")
+    print("\n[YES] Project configured:")
     print(f"   Name: {name}")
     print(f"   Description: {description}")
     print(f"   Priority: {priority.upper()}")
@@ -423,16 +423,16 @@ Each agent generates production-ready code in their folder:
                 "domains": ["backend", "frontend", "database"],
             },
         ]
-        print("✓ Using sample projects\n")
+        print("[OK] Using sample projects\n")
     else:
         orchestrator.load_projects()
 
     # Process all projects
     if orchestrator.projects:
-        print(f"\n🚀 Agents will generate code in:")
-        print(f"   📁 backend/   - Spring Boot Java code")
-        print(f"   📁 frontend/  - React/Next.js TypeScript code")
-        print(f"   📁 dbadmin/   - Oracle/PL-SQL scripts\n")
+        print(f"\n[>>] Agents will generate code in:")
+        print(f"   [DIR] backend/   - Spring Boot Java code")
+        print(f"   [DIR] frontend/  - React/Next.js TypeScript code")
+        print(f"   [DIR] dbadmin/   - Oracle/PL-SQL scripts\n")
 
         try:
             orchestrator.process_all_projects()
@@ -443,11 +443,11 @@ Each agent generates production-ready code in their folder:
 
             orchestrator.print_summary()
         except Exception as e:
-            print(f"\n❌ Error during project processing: {str(e)}")
+            print(f"\n[ERROR] Error during project processing: {str(e)}")
             import traceback
             traceback.print_exc()
     else:
-        print("❌ No projects to process!")
+        print("[ERROR] No projects to process!")
         print("\n🎯 Usage examples:")
         print("  python main.py --interactive           # Enter project interactively")
         print("  python main.py --sample                # Run with sample projects")
