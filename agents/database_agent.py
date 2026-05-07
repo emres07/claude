@@ -717,153 +717,67 @@ For issues:
         readme_path.write_text(readme_content, encoding="utf-8")
         self.created_files.append(readme_path)
 
-        # Generate subtask-specific implementations
+        # Generate subtask documentation only (code is already in main folder)
         if subtasks:
-            self._generate_subtask_implementations(project_folder, subtasks, schema_name)
+            self._generate_subtask_documentation(project_folder, subtasks)
 
         self.log_action(f"Database project structure created (versioned, not executed): {project_name}")
 
-    def _generate_subtask_implementations(
-        self, project_folder: Path, subtasks: List[Dict[str, Any]], schema_name: str
+    def _generate_subtask_documentation(
+        self, project_folder: Path, subtasks: List[Dict[str, Any]]
     ) -> None:
-        """Generate specific code for each subtask."""
+        """Generate documentation for each subtask (code is in main folder)."""
         subtasks_folder = project_folder / "subtasks"
         subtasks_folder.mkdir(parents=True, exist_ok=True)
 
         for idx, subtask in enumerate(subtasks, 1):
-            subtask_name = subtask["title"].lower().replace(" - ", "_").replace(" ", "_")
+            subtask_name = subtask["title"].lower().replace(" - ", "_").replace(" ", "_").replace("&", "")
             subtask_folder = subtasks_folder / f"{idx:02d}_{subtask_name}"
             subtask_folder.mkdir(parents=True, exist_ok=True)
 
-            # Create README for subtask
+            # Create detailed README for each subtask
             readme_content = f"""# {subtask['title']}
 
-## Description
+## Subtask #{idx}
+
+### Description
 {subtask['description']}
 
-## Tables
+### What Was Generated
+All code for this subtask has been generated in the main project folder:
+- `migrations/` - SQL migration scripts (versioned)
+- `.migration_status` - Version tracking (JSON)
+- `README.md` - Migration documentation
+
+### Tables Generated
 {chr(10).join([f"- {table}" for table in subtask.get('tables', [])])}
 
-## Indexes
+### Indexes Generated
 {chr(10).join([f"- {idx}" for idx in subtask.get('indexes', [])])}
 
-## Acceptance Criteria
-- [ ] Schema designed and validated
-- [ ] Migration scripts tested
-- [ ] Permissions configured
-- [ ] Documentation complete
+### Acceptance Criteria
+- [x] Code generated automatically
+- [ ] Migrations tested in development
+- [ ] Migrations executed in order
+- [ ] Backup strategy implemented
+- [ ] Code reviewed
 
-## Files Generated
-Generated SQL scripts for this subtask.
+### Next Steps
+1. Review generated scripts in main project folder
+2. Test migrations in development environment
+3. Execute migrations in order (001 → 002 → 003)
+4. Verify all tables and procedures created
+5. Test CRUD operations
+6. Commit to version control
+
+### Files to Review
+- All SQL files follow Oracle best practices
+- Migration scripts are versioned and safe (not auto-executed)
+- Stored procedures include error handling
+- Tables include proper constraints and indexes
 """
             readme_path = subtask_folder / "README.md"
             readme_path.write_text(readme_content, encoding="utf-8")
             self.created_files.append(readme_path)
 
-            # Subtask 1: Setup
-            if idx == 1:
-                self._generate_db_subtask_1_setup(subtask_folder, schema_name)
-            # Subtask 2: Create Tables
-            elif idx == 2:
-                self._generate_db_subtask_2_tables(subtask_folder, schema_name)
-            # Subtask 3: Indexes & Triggers
-            elif idx == 3:
-                self._generate_db_subtask_3_indexes_triggers(subtask_folder, schema_name)
-            # Subtask 4: Procedures
-            elif idx == 4:
-                self._generate_db_subtask_4_procedures(subtask_folder, schema_name)
-            # Subtask 5: Backup
-            elif idx == 5:
-                self._generate_db_subtask_5_backup(subtask_folder, schema_name)
-
-    def _generate_db_subtask_1_setup(self, subtask_folder: Path, schema_name: str) -> None:
-        """Generate setup script."""
-        setup_path = subtask_folder / "001_setup.sql"
-        setup_path.write_text(
-            DatabaseSkill.generate_oracle_schema(schema_name),
-            encoding="utf-8"
-        )
-        self.created_files.append(setup_path)
-        self.log_action("Generated DB subtask 1: Setup")
-
-    def _generate_db_subtask_2_tables(self, subtask_folder: Path, schema_name: str) -> None:
-        """Generate table creation scripts."""
-        tables_path = subtask_folder / "002_tables.sql"
-        content = "-- ============================================================\n"
-        content += "-- TABLE CREATION SCRIPTS\n"
-        content += "-- ============================================================\n\n"
-
-        for table in ["user", "task", "audit"]:
-            content += DatabaseSkill.generate_table_template(table) + "\n\n"
-
-        tables_path.write_text(content, encoding="utf-8")
-        self.created_files.append(tables_path)
-        self.log_action("Generated DB subtask 2: Tables")
-
-    def _generate_db_subtask_3_indexes_triggers(self, subtask_folder: Path, schema_name: str) -> None:
-        """Generate indexes and triggers."""
-        indexes_path = subtask_folder / "003_indexes_triggers.sql"
-        indexes_path.write_text(
-            "-- ============================================================\n"
-            "-- INDEXES AND TRIGGERS\n"
-            "-- ============================================================\n\n"
-            "-- Indexes for performance\n"
-            "CREATE INDEX idx_user_email ON user(email);\n"
-            "CREATE INDEX idx_task_user ON task(user_id);\n"
-            "CREATE INDEX idx_audit_time ON audit(operation_time);\n",
-            encoding="utf-8"
-        )
-        self.created_files.append(indexes_path)
-        self.log_action("Generated DB subtask 3: Indexes & Triggers")
-
-    def _generate_db_subtask_4_procedures(self, subtask_folder: Path, schema_name: str) -> None:
-        """Generate stored procedures."""
-        procedures_path = subtask_folder / "004_procedures.sql"
-        content = "-- ============================================================\n"
-        content += "-- CRUD STORED PROCEDURES\n"
-        content += "-- ============================================================\n\n"
-
-        for table in ["user", "task", "audit"]:
-            content += DatabaseSkill.generate_crud_procedures(table) + "\n\n"
-
-        procedures_path.write_text(content, encoding="utf-8")
-        self.created_files.append(procedures_path)
-        self.log_action("Generated DB subtask 4: Procedures")
-
-    def _generate_db_subtask_5_backup(self, subtask_folder: Path, schema_name: str) -> None:
-        """Generate backup documentation."""
-        backup_path = subtask_folder / "BACKUP_STRATEGY.md"
-        backup_path.write_text(
-            f"""# Backup Strategy for {schema_name}
-
-## Backup Plan
-
-### Daily Backups
-```bash
-expdp {schema_name}/welcome123@xe directory=backup_dir dumpfile={schema_name}_daily.dmp logfile={schema_name}_daily.log
-```
-
-### Weekly Full Backups
-```bash
-expdp {schema_name}/welcome123@xe full=Y directory=backup_dir dumpfile={schema_name}_full_weekly.dmp
-```
-
-### Archive Logs
-Enable archivelog mode for point-in-time recovery.
-
-## Restore Procedure
-
-```sql
--- Restore from backup
-impdp {schema_name}/welcome123@xe directory=backup_dir dumpfile={schema_name}_daily.dmp logfile=restore.log
-```
-
-## Verification
-- Test restore procedure monthly
-- Document recovery time objectives (RTO)
-- Document recovery point objectives (RPO)
-""",
-            encoding="utf-8"
-        )
-        self.created_files.append(backup_path)
-        self.log_action("Generated DB subtask 5: Backup Strategy")
+            self.log_action(f"Generated documentation for subtask {idx}: {subtask['title']}")

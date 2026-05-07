@@ -244,174 +244,67 @@ class BackendAgent(BaseAgent):
         )
         self.created_files.append(setup_script)
 
-        # Generate subtask-specific implementations
+        # Generate subtask documentation only (code is already in main folder)
         if subtasks:
-            self._generate_subtask_implementations(project_folder, subtasks, base_package)
+            self._generate_subtask_documentation(project_folder, subtasks)
 
         self.log_action(f"Backend project structure created: {project_name}")
 
-    def _generate_subtask_implementations(
-        self, project_folder: Path, subtasks: List[Dict[str, Any]], base_package: str
+    def _generate_subtask_documentation(
+        self, project_folder: Path, subtasks: List[Dict[str, Any]]
     ) -> None:
-        """Generate specific code for each subtask."""
+        """Generate documentation for each subtask (code is in main folder)."""
         subtasks_folder = project_folder / "subtasks"
+        subtasks_folder.mkdir(parents=True, exist_ok=True)
 
         for idx, subtask in enumerate(subtasks, 1):
-            subtask_name = subtask["title"].lower().replace(" - ", "_").replace(" ", "_")
+            subtask_name = subtask["title"].lower().replace(" - ", "_").replace(" ", "_").replace("&", "")
             subtask_folder = subtasks_folder / f"{idx:02d}_{subtask_name}"
             subtask_folder.mkdir(parents=True, exist_ok=True)
 
-            # Create README for subtask
+            # Create detailed README for each subtask
             readme_content = f"""# {subtask['title']}
 
-## Description
+## Subtask #{idx}
+
+### Description
 {subtask['description']}
 
-## Acceptance Criteria
-- [ ] Implementation complete
-- [ ] Tests written
-- [ ] Documentation updated
-- [ ] Code reviewed
+### What Was Generated
+All code for this subtask has been generated in the main project folder:
+- `src/main/java/com/example/todolastapp/` - Source code
+- `pom.xml` - Maven configuration
+- `src/main/resources/application.yml` - Application settings
 
-## Files Generated
-Generated implementation files for this subtask.
+### APIs Generated
+{chr(10).join([f"- {api}" for api in subtask.get('apis', [])])}
+
+### Database Schemas
+{chr(10).join([f"- {schema}" for schema in subtask.get('db_schemas', [])])}
+
+### Acceptance Criteria
+- [x] Code generated automatically
+- [ ] Code reviewed
+- [ ] Tests written
+- [ ] Integration tested
+
+### Next Steps
+1. Review generated code in main project folder
+2. Customize as needed
+3. Write unit tests
+4. Run: `mvn clean install`
+5. Start: `mvn spring-boot:run`
+
+### Files to Review
+- Look at the main project folder for all generated files
+- All Java files follow Spring Boot best practices
+- Entity mappings include proper relationships
+- Services include business logic and error handling
+- Controllers include REST endpoints with proper annotations
 """
             readme_path = subtask_folder / "README.md"
             readme_path.write_text(readme_content, encoding="utf-8")
             self.created_files.append(readme_path)
 
-            # Subtask 1: Setup Spring Boot
-            if idx == 1:
-                self._generate_subtask_1_setup(subtask_folder, base_package)
-            # Subtask 2: Entities & Repositories
-            elif idx == 2:
-                self._generate_subtask_2_entities_repos(subtask_folder, base_package)
-            # Subtask 3: Services
-            elif idx == 3:
-                self._generate_subtask_3_services(subtask_folder, base_package)
-            # Subtask 4: Controllers
-            elif idx == 4:
-                self._generate_subtask_4_controllers(subtask_folder, base_package)
-            # Subtask 5: Security
-            elif idx == 5:
-                self._generate_subtask_5_security(subtask_folder, base_package)
+            self.log_action(f"Generated documentation for subtask {idx}: {subtask['title']}")
 
-    def _generate_subtask_1_setup(self, subtask_folder: Path, base_package: str) -> None:
-        """Generate Spring Boot setup files with proper structure."""
-        # Create pom.xml
-        pom_path = subtask_folder / "pom.xml"
-        pom_path.write_text(BackendSkill.generate_pom_xml("setup"), encoding="utf-8")
-        self.created_files.append(pom_path)
-
-        # Create application.yml
-        resources_dir = subtask_folder / "src" / "main" / "resources"
-        resources_dir.mkdir(parents=True, exist_ok=True)
-
-        app_yml = resources_dir / "application.yml"
-        app_yml.write_text(BackendSkill.generate_application_yml(), encoding="utf-8")
-        self.created_files.append(app_yml)
-
-        # Create main application class
-        java_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package
-        java_dir.mkdir(parents=True, exist_ok=True)
-
-        app_class = """package com.example;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class Application {
-
-    public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
-    }
-}
-"""
-        app_class_path = java_dir / "Application.java"
-        app_class_path.write_text(app_class, encoding="utf-8")
-        self.created_files.append(app_class_path)
-
-        self.log_action("Generated subtask 1: Setup with pom.xml and application.yml")
-
-    def _generate_subtask_2_entities_repos(self, subtask_folder: Path, base_package: str) -> None:
-        """Generate JPA entities and repositories with proper structure."""
-        # Entity directory
-        entity_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package / "entity"
-        entity_dir.mkdir(parents=True, exist_ok=True)
-
-        # Repository directory
-        repo_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package / "repository"
-        repo_dir.mkdir(parents=True, exist_ok=True)
-
-        for entity in ["user", "task", "audit"]:
-            # Create entity
-            entity_path = entity_dir / f"{entity.title()}.java"
-            entity_path.write_text(BackendSkill.generate_entity_template(entity), encoding="utf-8")
-            self.created_files.append(entity_path)
-
-            # Create repository
-            repo_path = repo_dir / f"{entity.title()}Repository.java"
-            repo_path.write_text(BackendSkill.generate_repository_template(entity), encoding="utf-8")
-            self.created_files.append(repo_path)
-
-        self.log_action("Generated subtask 2: Entities and Repositories with src structure")
-
-    def _generate_subtask_3_services(self, subtask_folder: Path, base_package: str) -> None:
-        """Generate service layer with proper structure."""
-        service_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package / "service"
-        service_dir.mkdir(parents=True, exist_ok=True)
-
-        for entity in ["user", "task", "audit"]:
-            service_path = service_dir / f"{entity.title()}Service.java"
-            service_path.write_text(BackendSkill.generate_service_template(entity), encoding="utf-8")
-            self.created_files.append(service_path)
-
-        self.log_action("Generated subtask 3: Services with src structure")
-
-    def _generate_subtask_4_controllers(self, subtask_folder: Path, base_package: str) -> None:
-        """Generate REST controllers with proper structure."""
-        controller_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package / "controller"
-        controller_dir.mkdir(parents=True, exist_ok=True)
-
-        for entity in ["user", "task", "audit"]:
-            controller_path = controller_dir / f"{entity.title()}Controller.java"
-            controller_path.write_text(BackendSkill.generate_controller_template(entity), encoding="utf-8")
-            self.created_files.append(controller_path)
-
-        self.log_action("Generated subtask 4: Controllers with src structure")
-
-    def _generate_subtask_5_security(self, subtask_folder: Path, base_package: str) -> None:
-        """Generate security configuration with proper structure."""
-        config_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package / "config"
-        config_dir.mkdir(parents=True, exist_ok=True)
-
-        security_config = """package com.example.config;
-
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
-
-@Configuration
-public class SecurityConfig {
-
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .authorizeRequests()
-            .antMatchers("/api/v1/public/**").permitAll()
-            .antMatchers("/api/v1/**").authenticated()
-            .and()
-            .httpBasic()
-            .and()
-            .csrf().disable();
-        return http.build();
-    }
-}
-"""
-        security_path = config_dir / "SecurityConfig.java"
-        security_path.write_text(security_config, encoding="utf-8")
-        self.created_files.append(security_path)
-
-        self.log_action("Generated subtask 5: Security Configuration with src structure")

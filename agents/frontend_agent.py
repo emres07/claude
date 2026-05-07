@@ -255,113 +255,72 @@ class FrontendAgent(BaseAgent):
         )
         self.created_files.append(setup_script)
 
-        # Generate subtask-specific implementations
+        # Generate subtask documentation only (code is already in main folder)
         if subtasks:
-            self._generate_subtask_implementations(project_folder, subtasks)
+            self._generate_subtask_documentation(project_folder, subtasks)
 
         self.log_action(f"Frontend project structure created: {project_name}")
 
-    def _generate_subtask_implementations(
+    def _generate_subtask_documentation(
         self, project_folder: Path, subtasks: List[Dict[str, Any]]
     ) -> None:
-        """Generate specific code for each subtask."""
+        """Generate documentation for each subtask (code is in main folder)."""
         subtasks_folder = project_folder / "subtasks"
+        subtasks_folder.mkdir(parents=True, exist_ok=True)
 
         for idx, subtask in enumerate(subtasks, 1):
-            subtask_name = subtask["title"].lower().replace(" - ", "_").replace(" ", "_")
+            subtask_name = subtask["title"].lower().replace(" - ", "_").replace(" ", "_").replace("&", "")
             subtask_folder = subtasks_folder / f"{idx:02d}_{subtask_name}"
             subtask_folder.mkdir(parents=True, exist_ok=True)
 
-            # Create README for subtask
+            # Create detailed README for each subtask
             readme_content = f"""# {subtask['title']}
 
-## Description
+## Subtask #{idx}
+
+### Description
 {subtask['description']}
 
-## Components/Pages
-{chr(10).join([f"- {item}" for item in subtask.get('components', []) + subtask.get('pages', [])])}
+### What Was Generated
+All code for this subtask has been generated in the main project folder:
+- `src/components/` - React components
+- `src/pages/` - Next.js pages
+- `src/services/` - API services
+- `package.json` - Dependencies
+- `tsconfig.json` - TypeScript configuration
 
-## Acceptance Criteria
-- [ ] Implementation complete
-- [ ] Responsive design working
-- [ ] API integration complete
+### Components Generated
+{chr(10).join([f"- {comp}" for comp in subtask.get('components', [])])}
+
+### Pages Generated
+{chr(10).join([f"- {page}" for page in subtask.get('pages', [])])}
+
+### Responsive Design
+{"Yes" if subtask.get('responsive') else "No"}
+
+### Acceptance Criteria
+- [x] Code generated automatically
+- [ ] Components tested
+- [ ] Responsive design verified
+- [ ] API integration working
 - [ ] Code reviewed
 
-## Files Generated
-Generated implementation files for this subtask.
+### Next Steps
+1. Review generated components and pages in main project folder
+2. Customize styling and layout
+3. Test responsiveness on different screens
+4. Integrate with backend APIs
+5. Run: `npm run dev`
+
+### Files to Review
+- All TypeScript/React files follow best practices
+- Components are reusable and well-typed
+- Pages use Next.js routing conventions
+- API service handles error cases
 """
             readme_path = subtask_folder / "README.md"
             readme_path.write_text(readme_content, encoding="utf-8")
             self.created_files.append(readme_path)
 
-            # Subtask 1: Setup
-            if idx == 1:
-                self._generate_subtask_1_setup(subtask_folder)
-            # Subtask 2: Base Components
-            elif idx == 2:
-                self._generate_subtask_2_base_components(subtask_folder)
-            # Subtask 3: Feature Components
-            elif idx == 3:
-                self._generate_subtask_3_feature_components(subtask_folder)
-            # Subtask 4: Pages
-            elif idx == 4:
-                self._generate_subtask_4_pages(subtask_folder)
-            # Subtask 5: API Integration
-            elif idx == 5:
-                self._generate_subtask_5_api_integration(subtask_folder)
+            self.log_action(f"Generated documentation for subtask {idx}: {subtask['title']}")
 
-    def _generate_subtask_1_setup(self, subtask_folder: Path) -> None:
-        """Generate Next.js setup files."""
-        package_path = subtask_folder / "package.json"
-        package_path.write_text(FrontendSkill.generate_package_json("setup"), encoding="utf-8")
-        self.created_files.append(package_path)
-        self.log_action("Generated subtask 1: Setup files")
-
-    def _generate_subtask_2_base_components(self, subtask_folder: Path) -> None:
-        """Generate base components."""
-        components_dir = subtask_folder / "components"
-        components_dir.mkdir(parents=True, exist_ok=True)
-
-        for component in ["button", "form", "card", "modal", "input"]:
-            comp_path = components_dir / f"{component.title()}.tsx"
-            comp_path.write_text(FrontendSkill.generate_component_template(component), encoding="utf-8")
-            self.created_files.append(comp_path)
-
-        self.log_action("Generated subtask 2: Base Components")
-
-    def _generate_subtask_3_feature_components(self, subtask_folder: Path) -> None:
-        """Generate feature components."""
-        components_dir = subtask_folder / "components"
-        components_dir.mkdir(parents=True, exist_ok=True)
-
-        for component in ["user_card", "task_list", "task_form", "audit_log"]:
-            comp_path = components_dir / f"{component.title()}.tsx"
-            comp_path.write_text(FrontendSkill.generate_component_template(component), encoding="utf-8")
-            self.created_files.append(comp_path)
-
-        self.log_action("Generated subtask 3: Feature Components")
-
-    def _generate_subtask_4_pages(self, subtask_folder: Path) -> None:
-        """Generate pages."""
-        pages_dir = subtask_folder / "pages"
-        pages_dir.mkdir(parents=True, exist_ok=True)
-
-        for page in ["dashboard", "users", "tasks", "settings", "profile"]:
-            page_path = pages_dir / f"{page}.tsx"
-            page_path.write_text(FrontendSkill.generate_page_template(page), encoding="utf-8")
-            self.created_files.append(page_path)
-
-        self.log_action("Generated subtask 4: Pages")
-
-    def _generate_subtask_5_api_integration(self, subtask_folder: Path) -> None:
-        """Generate API integration files."""
-        services_dir = subtask_folder / "services"
-        services_dir.mkdir(parents=True, exist_ok=True)
-
-        api_path = services_dir / "api.service.ts"
-        api_path.write_text(FrontendSkill.generate_api_service("api"), encoding="utf-8")
-        self.created_files.append(api_path)
-
-        self.log_action("Generated subtask 5: API Integration")
-
-        self.log_action(f"Frontend project structure created: {project_name}")

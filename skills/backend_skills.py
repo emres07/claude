@@ -123,7 +123,7 @@ class BackendSkill:
                         <path>
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
-                            <version>${{'$'}}{lombok.version}</version>
+                            <version>${{lombok.version}}</version>
                         </path>
                         <path>
                             <groupId>org.mapstruct</groupId>
