@@ -94,8 +94,10 @@ class DatabaseAgent(BaseAgent):
 
         content += f"## Status\n{subtask['status']}\n"
 
+        # Sanitize filename by removing colons
+        sanitized_id = subtask["id"].replace(":", "_")
         filepath = self.save_task_file(
-            filename=subtask["id"],
+            filename=sanitized_id,
             content=content,
             task_id=None,
         )
@@ -110,42 +112,67 @@ class DatabaseAgent(BaseAgent):
         task_id: str,
         task_title: str,
     ) -> List[Dict[str, Any]]:
-        """Create multiple database subtasks from a main task."""
-        subtasks = [
-            self.create_database_subtask(
-                task_id=task_id,
-                title=f"Database Setup & Schema Creation - {task_title}",
-                description="Create schema, tablespace, user, and initial setup",
-                tables=["schema_setup", "tablespace", "user_creation"],
-            ),
-            self.create_database_subtask(
-                task_id=task_id,
-                title=f"Create Core Tables - {task_title}",
-                description="Create user, task, and audit tables with constraints",
-                tables=["user", "task", "audit"],
-            ),
-            self.create_database_subtask(
-                task_id=task_id,
-                title=f"Create Indexes & Triggers - {task_title}",
-                description="Create indexes for performance and triggers for audit",
-                indexes=["idx_user_email", "idx_task_user", "idx_audit_time"],
-                performance_critical=True,
-            ),
-            self.create_database_subtask(
-                task_id=task_id,
-                title=f"Create Stored Procedures - {task_title}",
-                description="Create CRUD procedures and packages for all tables",
-                tables=["user", "task", "audit"],
-            ),
-            self.create_database_subtask(
-                task_id=task_id,
-                title=f"Setup Backup & Documentation - {task_title}",
-                description="Document schema, create backup strategy, and version control",
-                indexes=["backup_strategy", "documentation"],
-            ),
-        ]
+        """Create database subtasks specific to the business process."""
+        # Map business processes to database technical specifications
+        business_process = task_title.split(" - ")[0]  # Extract business process name
 
-        return subtasks
+        subtask_specs = {
+            "User Management": {
+                "title": "User Data Schema & CRUD Procedures",
+                "description": "Create users table with profile information, indexes for performance, and PL/SQL procedures for user CRUD operations",
+                "tables": ["users", "user_profiles"],
+                "indexes": ["idx_user_email", "idx_user_created"],
+                "performance_critical": False,
+            },
+            "Authentication & Authorization": {
+                "title": "Authentication & Sessions Schema",
+                "description": "Create sessions table for token management, roles table for authorization, and audit triggers for security logging",
+                "tables": ["sessions", "roles", "user_roles"],
+                "indexes": ["idx_session_token", "idx_role_user"],
+                "performance_critical": True,
+            },
+            "Core Business Logic": {
+                "title": "Core Business Tables & Procedures",
+                "description": "Create main business domain tables with relationships, constraints, and PL/SQL packages for business logic implementation",
+                "tables": ["resources", "workflows", "transactions"],
+                "indexes": ["idx_resource_status", "idx_workflow_user"],
+                "performance_critical": True,
+            },
+            "API & Integration": {
+                "title": "API Integration Tables & Services",
+                "description": "Create integration tracking tables, API logs, webhook history, and stored procedures for integration points",
+                "tables": ["api_logs", "webhooks", "integrations"],
+                "indexes": ["idx_api_timestamp", "idx_webhook_status"],
+                "performance_critical": False,
+            },
+            "Audit & Monitoring": {
+                "title": "Audit & Monitoring Tables",
+                "description": "Create comprehensive audit tables for activity tracking, monitoring data, and reporting procedures with historical data retention",
+                "tables": ["audit_logs", "activity_logs", "system_events"],
+                "indexes": ["idx_audit_timestamp", "idx_activity_user"],
+                "performance_critical": True,
+            },
+        }
+
+        # Get specifications for this business process, or use defaults
+        spec = subtask_specs.get(business_process, {
+            "title": f"Database Implementation for {business_process}",
+            "description": f"Implement database schema and procedures for {business_process}",
+            "tables": [business_process.lower().replace(" ", "_")],
+            "indexes": [f"idx_{business_process.lower().replace(' ', '_')}"],
+            "performance_critical": False,
+        })
+
+        subtask = self.create_database_subtask(
+            task_id=task_id,
+            title=f"{spec['title']} - {task_title}",
+            description=spec["description"],
+            tables=spec.get("tables", []),
+            indexes=spec.get("indexes", []),
+            performance_critical=spec.get("performance_critical", False),
+        )
+
+        return [subtask]
 
     def clarify_task_description(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Clarify and enhance task description."""
@@ -222,8 +249,8 @@ class DatabaseAgent(BaseAgent):
         }
 
     def generate_project_structure(self, project_name: str, subtasks: List[Dict[str, Any]] = None,
-                                  schema_name: str = None, subtask_indices: List[int] = None) -> None:
-        """Generate versioned Oracle database scripts based on subtasks."""
+                                  schema_name: str = None) -> None:
+        """Generate versioned Oracle database scripts based on business process subtasks."""
         if schema_name is None:
             schema_name = project_name.lower().replace(' ', '_')
 
@@ -234,21 +261,40 @@ class DatabaseAgent(BaseAgent):
         migrations_dir = project_folder / "migrations"
         migrations_dir.mkdir(parents=True, exist_ok=True)
 
-        # Only generate code for subtasks passed in
+        # Setup base schema on first business process
         if subtasks:
-            for i, subtask in enumerate(subtasks):
-                # Use provided indices or default to enumerate indices
-                idx = subtask_indices[i] if subtask_indices and i < len(subtask_indices) else i + 1
-                self._generate_subtask_migration(migrations_dir, subtask, idx, schema_name)
+            self._setup_base_schema(migrations_dir, project_name, schema_name)
+
+            for subtask in subtasks:
+                self._generate_subtask_migration(migrations_dir, subtask, schema_name)
+
+            # Generate migration guide and status file only after code generation
+            self._create_migration_guide(migrations_dir, project_name, schema_name)
+
+            # Generate subtask documentation
+            self._generate_subtask_documentation(project_folder, subtasks)
         else:
             # If no subtasks, generate all (backward compatibility)
             self._generate_all_migrations(migrations_dir, schema_name)
 
-        # Generate migration guide and status file only after code generation
-        self._create_migration_guide(migrations_dir, project_name, schema_name)
+        self.log_action(f"Database project structure created (versioned, not executed): {project_name}")
 
-        # ============= MAIN README =============
-        project_folder = migrations_dir.parent
+    def _setup_base_schema(self, migrations_dir: Path, project_name: str, schema_name: str) -> None:
+        """Setup base schema migration file."""
+        schema_sql_path = migrations_dir / "001_schema_creation.sql"
+        if not schema_sql_path.exists():
+            schema_sql_path.write_text(
+                DatabaseSkill.generate_oracle_schema(schema_name),
+                encoding="utf-8"
+            )
+            self.created_files.append(schema_sql_path)
+            self.log_action(f"Generated v001: Schema creation for {schema_name}")
+
+        # Generate README file
+        self._generate_project_readme(migrations_dir.parent, project_name, schema_name)
+
+    def _generate_project_readme(self, project_folder: Path, project_name: str, schema_name: str) -> None:
+        """Generate project README file."""
         readme_path = project_folder / "README.md"
         readme_content = f"""# {project_name} - Database Component
 
@@ -424,12 +470,6 @@ For issues:
         readme_path.write_text(readme_content, encoding="utf-8")
         self.created_files.append(readme_path)
 
-        # Generate subtask documentation only (code is already in main folder)
-        if subtasks:
-            self._generate_subtask_documentation(project_folder, subtasks)
-
-        self.log_action(f"Database project structure created (versioned, not executed): {project_name}")
-
     def _generate_subtask_documentation(
         self, project_folder: Path, subtasks: List[Dict[str, Any]]
     ) -> None:
@@ -494,56 +534,87 @@ All code for this subtask has been generated in the main project folder:
             self.log_action(f"Generated documentation for subtask {idx}: {subtask['title']}")
 
     def _generate_subtask_migration(self, migrations_dir: Path, subtask: Dict[str, Any],
-                                     subtask_idx: int, schema_name: str) -> None:
-        """Generate database migration scripts based on subtask."""
-        tables = ["user", "transaction", "audit"]
+                                     schema_name: str) -> None:
+        """Generate database migration scripts based on business process."""
+        # Extract business process from subtask title
+        title = subtask.get("title", "")
+        business_process = title.split(" - ")[0] if " - " in title else title
+        tables = subtask.get("tables", [])
 
-        if subtask_idx == 1:
-            # Subtask 1: Database Setup & Schema Creation
-            schema_sql_path = migrations_dir / "001_schema_creation.sql"
-            schema_sql_path.write_text(
-                DatabaseSkill.generate_oracle_schema(schema_name),
-                encoding="utf-8"
-            )
-            self.created_files.append(schema_sql_path)
-            self.log_action(f"Generated v001: Schema creation for {schema_name}")
+        if "User Management" in business_process:
+            self._generate_user_management_migration(migrations_dir, tables)
+        elif "Authentication" in business_process:
+            self._generate_authentication_migration(migrations_dir, tables)
+        elif "Core Business Logic" in business_process:
+            self._generate_core_logic_migration(migrations_dir, tables)
+        elif "API & Integration" in business_process:
+            self._generate_api_integration_migration(migrations_dir, tables)
+        elif "Audit & Monitoring" in business_process:
+            self._generate_audit_migration(migrations_dir, tables)
 
-        elif subtask_idx == 2:
-            # Subtask 2: Create Core Tables
-            tables_sql_path = migrations_dir / "002_create_tables.sql"
-            tables_content = "-- ============================================================\n"
-            tables_content += "-- VERSION 002: Create Tables\n"
-            tables_content += "-- ============================================================\n\n"
-
+    def _generate_user_management_migration(self, migrations_dir: Path, tables: List[str]) -> None:
+        """Generate user management tables and procedures."""
+        tables_sql_path = migrations_dir / "002_user_management_tables.sql"
+        if not tables_sql_path.exists():
+            tables_content = "-- User Management Tables\n"
             for table in tables:
-                tables_content += DatabaseSkill.generate_table_template(table) + "\n"
-
+                tables_content += DatabaseSkill.generate_table_template(table.replace("_", "")) + "\n"
             tables_sql_path.write_text(tables_content, encoding="utf-8")
             self.created_files.append(tables_sql_path)
-            self.log_action(f"Generated v002: Create all tables")
+            self.log_action("Generated user management tables")
 
-        elif subtask_idx == 3:
-            # Subtask 3: Create Indexes & Triggers
-            # This could be extended with actual index and trigger generation
-            pass
-
-        elif subtask_idx == 4:
-            # Subtask 4: Create Stored Procedures
-            crud_sql_path = migrations_dir / "003_crud_procedures.sql"
-            crud_content = "-- ============================================================\n"
-            crud_content += "-- VERSION 003: Create CRUD Stored Procedures\n"
-            crud_content += "-- ============================================================\n\n"
-
+    def _generate_authentication_migration(self, migrations_dir: Path, tables: List[str]) -> None:
+        """Generate authentication and session tables."""
+        tables_sql_path = migrations_dir / "003_authentication_tables.sql"
+        if not tables_sql_path.exists():
+            tables_content = "-- Authentication & Authorization Tables\n"
             for table in tables:
-                crud_content += DatabaseSkill.generate_crud_procedures(table) + "\n\n"
+                tables_content += DatabaseSkill.generate_table_template(table.replace("_", "")) + "\n"
+            tables_sql_path.write_text(tables_content, encoding="utf-8")
+            self.created_files.append(tables_sql_path)
+            self.log_action("Generated authentication tables")
 
+    def _generate_core_logic_migration(self, migrations_dir: Path, tables: List[str]) -> None:
+        """Generate core business logic tables and procedures."""
+        tables_sql_path = migrations_dir / "004_core_business_tables.sql"
+        if not tables_sql_path.exists():
+            tables_content = "-- Core Business Logic Tables\n"
+            for table in tables:
+                tables_content += DatabaseSkill.generate_table_template(table.replace("_", "")) + "\n"
+            tables_sql_path.write_text(tables_content, encoding="utf-8")
+            self.created_files.append(tables_sql_path)
+            self.log_action("Generated core business tables")
+
+    def _generate_api_integration_migration(self, migrations_dir: Path, tables: List[str]) -> None:
+        """Generate API integration tables."""
+        tables_sql_path = migrations_dir / "005_api_integration_tables.sql"
+        if not tables_sql_path.exists():
+            tables_content = "-- API Integration Tables\n"
+            for table in tables:
+                tables_content += DatabaseSkill.generate_table_template(table.replace("_", "")) + "\n"
+            tables_sql_path.write_text(tables_content, encoding="utf-8")
+            self.created_files.append(tables_sql_path)
+            self.log_action("Generated API integration tables")
+
+    def _generate_audit_migration(self, migrations_dir: Path, tables: List[str]) -> None:
+        """Generate audit and monitoring tables with procedures."""
+        tables_sql_path = migrations_dir / "006_audit_tables.sql"
+        if not tables_sql_path.exists():
+            tables_content = "-- Audit & Monitoring Tables\n"
+            for table in tables:
+                tables_content += DatabaseSkill.generate_table_template(table.replace("_", "")) + "\n"
+            tables_sql_path.write_text(tables_content, encoding="utf-8")
+            self.created_files.append(tables_sql_path)
+            self.log_action("Generated audit tables")
+
+        # Generate audit procedures
+        crud_sql_path = migrations_dir / "007_audit_procedures.sql"
+        if not crud_sql_path.exists():
+            crud_content = "-- Audit Stored Procedures\n"
+            crud_content += DatabaseSkill.generate_crud_procedures("audit") + "\n"
             crud_sql_path.write_text(crud_content, encoding="utf-8")
             self.created_files.append(crud_sql_path)
-            self.log_action(f"Generated v003: CRUD procedures for all tables")
-
-        elif subtask_idx == 5:
-            # Subtask 5: Setup Backup & Documentation
-            pass
+            self.log_action("Generated audit procedures")
 
     def _generate_all_migrations(self, migrations_dir: Path, schema_name: str) -> None:
         """Generate all migration scripts (backward compatibility)."""

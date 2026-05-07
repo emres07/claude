@@ -92,83 +92,78 @@ class TaskCreatorAgent(BaseAgent):
         priority: str = "medium",
         domains: List[str] = None,
     ) -> List[Dict[str, Any]]:
-        """Break down a project into project phases as main tasks."""
+        """Break down a project into business process tasks."""
         if domains is None:
             domains = ["backend", "frontend", "database"]
 
         tasks = []
 
-        # Define project phases
-        phases = [
+        # Define common business processes
+        business_processes = [
             {
-                "phase": "Phase 1",
-                "title": "Setup & Configuration",
-                "description": "Project initialization, configuration, and environment setup",
+                "title": "User Management",
+                "description": "Implement user registration, profile management, and user data handling",
                 "criteria": [
-                    "Project structure created",
-                    "Build tools configured",
-                    "Dependencies installed",
-                    "Configuration files set up",
+                    "User registration workflow implemented",
+                    "User profile management complete",
+                    "User data validation working",
+                    "User deletion/deactivation supported",
                 ],
             },
             {
-                "phase": "Phase 2",
-                "title": "Core Entity/Component Structure",
-                "description": "Create core entities, database tables, and UI components",
+                "title": "Authentication & Authorization",
+                "description": "Implement user login, authentication, session management, and access control",
                 "criteria": [
-                    "Core entities/models defined",
-                    "Database tables created",
-                    "Base components built",
-                    "Data structures validated",
+                    "Authentication mechanism implemented",
+                    "Session/token management working",
+                    "Authorization rules enforced",
+                    "Password security implemented",
                 ],
             },
             {
-                "phase": "Phase 3",
-                "title": "Business Logic & Services",
-                "description": "Implement business logic, services, and core functionality",
+                "title": "Core Business Logic",
+                "description": "Implement main business logic, workflow automation, and data processing",
                 "criteria": [
-                    "Business logic implemented",
-                    "Service layer created",
-                    "Data validation working",
+                    "Core business workflows implemented",
+                    "Data processing logic working",
+                    "Validation rules applied",
                     "Error handling in place",
                 ],
             },
             {
-                "phase": "Phase 4",
                 "title": "API & Integration",
-                "description": "Build REST APIs, controllers, and frontend integration",
+                "description": "Build REST APIs, third-party integrations, and service connections",
                 "criteria": [
                     "API endpoints implemented",
-                    "Frontend-backend integration complete",
-                    "Feature components integrated",
-                    "Routing configured",
+                    "Third-party integrations complete",
+                    "Frontend-backend integration working",
+                    "Data synchronization functional",
                 ],
             },
             {
-                "phase": "Phase 5",
-                "title": "Security, Testing & Documentation",
-                "description": "Implement security, add tests, and create documentation",
+                "title": "Audit & Monitoring",
+                "description": "Implement audit logging, monitoring, reporting, and compliance tracking",
                 "criteria": [
-                    "Security implemented",
-                    "Unit tests written",
-                    "Integration tests passing",
-                    "Documentation complete",
+                    "Audit logging implemented",
+                    "User activity tracking working",
+                    "Reports and analytics available",
+                    "Compliance requirements met",
                 ],
             },
         ]
 
-        # Create a task for each phase
-        for phase_data in phases:
-            phase_task = self.create_main_task(
-                title=f"{phase_data['phase']}: {phase_data['title']} - {project_name}",
-                description=f"{phase_data['description']}. {project_description}",
+        # Create a task for each business process
+        for process_data in business_processes:
+            bp_task = self.create_main_task(
+                title=f"{process_data['title']} - {project_name}",
+                description=f"{process_data['description']}. {project_description}",
                 priority=priority,
-                domains=domains,  # Each phase task includes all domains
-                acceptance_criteria=phase_data["criteria"],
+                domains=domains,  # Each business process task includes all domains
+                acceptance_criteria=process_data["criteria"],
             )
-            tasks.append(phase_task)
+            tasks.append(bp_task)
 
-        self.log_action(f"Created {len(tasks)} phase tasks from project: {project_name}")
+        self.log_action(f"Created {len(tasks)} business process tasks from project: {project_name}")
         return tasks
 
     def distribute_task(self, task: Dict[str, Any]) -> Dict[str, List[str]]:
