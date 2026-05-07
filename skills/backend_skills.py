@@ -345,8 +345,8 @@ public class {pascal_case}Controller {{
 
   datasource:
     url: {db_url}
-    username: ${{'{$DB_USER':<1}}'
-    password: ${{'{$DB_PASSWORD':<1}}'
+    username: ${{DB_USER:todo}}
+    password: ${{DB_PASSWORD:welcome123}}
     driver-class-name: oracle.jdbc.OracleDriver
 
   jpa:
