@@ -1,9 +1,12 @@
 """Base agent class for the multi-agent system."""
 
 import json
+import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from logger_config import setup_agent_logging
 
 
 class BaseAgent:
@@ -24,6 +27,10 @@ class BaseAgent:
         self.output_folder = Path(output_folder)
         self.skills = skills or []
         self.created_files: List[Path] = []
+
+        # Setup logging
+        self.logger = setup_agent_logging(agent_id)
+        self.logger.info(f"Initialized {name} (role: {role})")
 
         # Ensure output folder exists
         self.output_folder.mkdir(parents=True, exist_ok=True)
@@ -91,5 +98,7 @@ class BaseAgent:
 
     def log_action(self, action: str) -> None:
         """Log agent action."""
+        self.logger.info(action)
+        # Also print to console for immediate feedback
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[{timestamp}] {self.name}: {action}")
