@@ -6,6 +6,8 @@ This script orchestrates the agent team to create tasks and subtasks from projec
 
 import json
 import argparse
+import subprocess
+import os
 from pathlib import Path
 from typing import List, Dict, Any
 
@@ -78,13 +80,17 @@ class AgentTeamOrchestrator:
         print(f"Description: {project['description']}")
         print(f"{'='*70}\n")
 
-        # Task Creator Agent: Break project into business process tasks
-        print("[*] Task Creator Agent is breaking project into business processes...")
+        # Task Creator Agent: Break project into workflow-based tasks
+        print("[*] Task Creator Agent is breaking project into workflows...")
+        workflows = project.get('workflows', None)
+        if workflows:
+            print(f"    Using {len(workflows)} workflows from project definition")
         tasks = self.task_creator.create_tasks_from_project(
             project_name=project['name'],
             project_description=project['description'],
             priority=project.get('priority', 'medium'),
             domains=project.get('domains', ['backend', 'frontend', 'database']),
+            workflows=workflows,
         )
 
         # Save all main tasks
@@ -116,13 +122,14 @@ class AgentTeamOrchestrator:
         clarified_task = self.database_agent.clarify_task_description(task)
         print(f"  [OK] Requirements clarified\n")
 
-        # Backend Agent creates subtask for this business process
+        # Backend Agent creates subtask for this business process/workflow
         if "backend" in domains:
             print("[TOOL] Backend Agent is creating implementation subtask...")
             try:
                 backend_subtask_list = self.backend_agent.create_subtasks_from_task(
                     task_id=task["id"],
                     task_title=task["title"],
+                    task=task,
                 )
                 backend_subtask = backend_subtask_list[0] if backend_subtask_list else None
                 if backend_subtask:
@@ -136,13 +143,14 @@ class AgentTeamOrchestrator:
             except Exception as e:
                 print(f"  [ERROR] Backend error: {str(e)}\n")
 
-        # Frontend Agent creates subtask for this business process
+        # Frontend Agent creates subtask for this business process/workflow
         if "frontend" in domains:
             print("[ART] Frontend Agent is creating implementation subtask...")
             try:
                 frontend_subtask_list = self.frontend_agent.create_subtasks_from_task(
                     task_id=task["id"],
                     task_title=task["title"],
+                    task=task,
                 )
                 frontend_subtask = frontend_subtask_list[0] if frontend_subtask_list else None
                 if frontend_subtask:
@@ -156,13 +164,14 @@ class AgentTeamOrchestrator:
             except Exception as e:
                 print(f"  [ERROR] Frontend error: {str(e)}\n")
 
-        # Database Agent creates subtask for this business process
+        # Database Agent creates subtask for this business process/workflow
         if "database" in domains:
             print("[DB] Database Agent is creating implementation subtask...")
             try:
                 database_subtask_list = self.database_agent.create_subtasks_from_task(
                     task_id=task["id"],
                     task_title=task["title"],
+                    task=task,
                 )
                 database_subtask = database_subtask_list[0] if database_subtask_list else None
                 if database_subtask:
@@ -241,14 +250,58 @@ class AgentTeamOrchestrator:
         print(f"Timestamp: {commit_data['timestamp']}")
 
         if repo_url:
-            print(f"\nTo push to GitHub:")
+            print(f"\n[*] Pushing to GitHub repository...")
+            self._execute_github_push(repo_url, commit_data['commit_message'])
+        else:
+            print("\nNote: Provide GitHub repo URL with --github-repo to automatically push")
+
+    def _execute_github_push(self, repo_url: str, commit_message: str) -> None:
+        """Execute GitHub push using the shell script."""
+        script_path = Path(__file__).parent / "push_to_github.sh"
+
+        if not script_path.exists():
+            print(f"[ERROR] Push script not found at {script_path}")
+            print(f"\nManual push commands:")
             print(f"  1. git init")
             print(f"  2. git add .")
-            print(f"  3. git commit -m '{commit_data['commit_message']}'")
+            print(f"  3. git commit -m '{commit_message}'")
             print(f"  4. git remote add origin {repo_url}")
             print(f"  5. git push -u origin main")
-        else:
-            print("\nNote: Provide GitHub repo URL with --github-repo to see push commands")
+            return
+
+        try:
+            # Make script executable
+            os.chmod(script_path, 0o755)
+
+            # Execute the push script
+            print(f"\n[*] Executing push script: {script_path}")
+            result = subprocess.run(
+                ["bash", str(script_path), repo_url, commit_message],
+                capture_output=True,
+                text=True,
+                cwd=Path(__file__).parent
+            )
+
+            # Print script output
+            if result.stdout:
+                print(result.stdout)
+
+            # Handle errors
+            if result.returncode != 0:
+                print(f"[ERROR] Push script failed with exit code {result.returncode}")
+                if result.stderr:
+                    print(f"[ERROR] {result.stderr}")
+            else:
+                print("[OK] GitHub push completed successfully!")
+
+        except Exception as e:
+            print(f"[ERROR] Failed to execute push script: {str(e)}")
+            print(f"\nManual push commands:")
+            print(f"  1. git init")
+            print(f"  2. git add .")
+            print(f"  3. git commit -m '{commit_message}'")
+            print(f"  4. git remote add origin {repo_url}")
+            print(f"  5. git push -u origin main")
 
     def print_summary(self) -> None:
         """Print execution summary."""

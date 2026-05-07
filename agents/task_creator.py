@@ -91,79 +91,102 @@ class TaskCreatorAgent(BaseAgent):
         project_description: str,
         priority: str = "medium",
         domains: List[str] = None,
+        workflows: List[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
-        """Break down a project into business process tasks."""
+        """Break down a project into workflow-based tasks."""
         if domains is None:
             domains = ["backend", "frontend", "database"]
 
         tasks = []
 
-        # Define common business processes
-        business_processes = [
-            {
-                "title": "User Management",
-                "description": "Implement user registration, profile management, and user data handling",
-                "criteria": [
-                    "User registration workflow implemented",
-                    "User profile management complete",
-                    "User data validation working",
-                    "User deletion/deactivation supported",
-                ],
-            },
-            {
-                "title": "Authentication & Authorization",
-                "description": "Implement user login, authentication, session management, and access control",
-                "criteria": [
-                    "Authentication mechanism implemented",
-                    "Session/token management working",
-                    "Authorization rules enforced",
-                    "Password security implemented",
-                ],
-            },
-            {
-                "title": "Core Business Logic",
-                "description": "Implement main business logic, workflow automation, and data processing",
-                "criteria": [
-                    "Core business workflows implemented",
-                    "Data processing logic working",
-                    "Validation rules applied",
-                    "Error handling in place",
-                ],
-            },
-            {
-                "title": "API & Integration",
-                "description": "Build REST APIs, third-party integrations, and service connections",
-                "criteria": [
-                    "API endpoints implemented",
-                    "Third-party integrations complete",
-                    "Frontend-backend integration working",
-                    "Data synchronization functional",
-                ],
-            },
-            {
-                "title": "Audit & Monitoring",
-                "description": "Implement audit logging, monitoring, reporting, and compliance tracking",
-                "criteria": [
-                    "Audit logging implemented",
-                    "User activity tracking working",
-                    "Reports and analytics available",
-                    "Compliance requirements met",
-                ],
-            },
-        ]
+        # Use provided workflows or fall back to default business processes
+        if workflows:
+            # Create tasks based on provided workflows
+            for workflow in workflows:
+                workflow_task = self.create_main_task(
+                    title=f"{workflow['name']} - {project_name}",
+                    description=f"{workflow['description']}\n\nWorkflow Steps:\n" +
+                                "\n".join([f"- {step}" for step in workflow.get('steps', [])]),
+                    priority=priority,
+                    domains=domains,
+                    acceptance_criteria=[
+                        f"All steps in '{workflow['name']}' workflow implemented",
+                        f"All features implemented: {', '.join(workflow.get('features', []))}",
+                        f"Data entities created and integrated: {', '.join(workflow.get('data_entities', []))}",
+                        f"All actors ({', '.join(workflow.get('actors', []))}) can perform their roles",
+                        "End-to-end workflow tested and validated",
+                        "Error handling and edge cases covered",
+                    ],
+                )
+                workflow_task["workflow"] = workflow
+                tasks.append(workflow_task)
+        else:
+            # Fall back to default business processes
+            business_processes = [
+                {
+                    "title": "User Management",
+                    "description": "Implement user registration, profile management, and user data handling",
+                    "criteria": [
+                        "User registration workflow implemented",
+                        "User profile management complete",
+                        "User data validation working",
+                        "User deletion/deactivation supported",
+                    ],
+                },
+                {
+                    "title": "Authentication & Authorization",
+                    "description": "Implement user login, authentication, session management, and access control",
+                    "criteria": [
+                        "Authentication mechanism implemented",
+                        "Session/token management working",
+                        "Authorization rules enforced",
+                        "Password security implemented",
+                    ],
+                },
+                {
+                    "title": "Core Business Logic",
+                    "description": "Implement main business logic, workflow automation, and data processing",
+                    "criteria": [
+                        "Core business workflows implemented",
+                        "Data processing logic working",
+                        "Validation rules applied",
+                        "Error handling in place",
+                    ],
+                },
+                {
+                    "title": "API & Integration",
+                    "description": "Build REST APIs, third-party integrations, and service connections",
+                    "criteria": [
+                        "API endpoints implemented",
+                        "Third-party integrations complete",
+                        "Frontend-backend integration working",
+                        "Data synchronization functional",
+                    ],
+                },
+                {
+                    "title": "Audit & Monitoring",
+                    "description": "Implement audit logging, monitoring, reporting, and compliance tracking",
+                    "criteria": [
+                        "Audit logging implemented",
+                        "User activity tracking working",
+                        "Reports and analytics available",
+                        "Compliance requirements met",
+                    ],
+                },
+            ]
 
-        # Create a task for each business process
-        for process_data in business_processes:
-            bp_task = self.create_main_task(
-                title=f"{process_data['title']} - {project_name}",
-                description=f"{process_data['description']}. {project_description}",
-                priority=priority,
-                domains=domains,  # Each business process task includes all domains
-                acceptance_criteria=process_data["criteria"],
-            )
-            tasks.append(bp_task)
+            # Create a task for each business process
+            for process_data in business_processes:
+                bp_task = self.create_main_task(
+                    title=f"{process_data['title']} - {project_name}",
+                    description=f"{process_data['description']}. {project_description}",
+                    priority=priority,
+                    domains=domains,
+                    acceptance_criteria=process_data["criteria"],
+                )
+                tasks.append(bp_task)
 
-        self.log_action(f"Created {len(tasks)} business process tasks from project: {project_name}")
+        self.log_action(f"Created {len(tasks)} tasks from project: {project_name}")
         return tasks
 
     def distribute_task(self, task: Dict[str, Any]) -> Dict[str, List[str]]:

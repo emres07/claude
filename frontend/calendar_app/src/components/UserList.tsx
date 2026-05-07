@@ -1,99 +1,95 @@
-'use client';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { apiService } from '../services/api.service';
 
-import React, { useState, useEffect } from 'react';
-import apiService from '@/services/api';
-
-interface User {
-  id: number;
-  name: string;
-  email: string;
-  phoneNumber?: string;
-  active: boolean;
-  createdAt: string;
+interface UserListProps {
+  onEdit?: (item: any) => void;
+  onDelete?: (id: number) => void;
 }
 
-const UserList: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [page, setPage] = useState(0);
-  const [size] = useState(20);
+const UserList: React.FC<UserListProps> = ({ onEdit, onDelete }) => {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    fetchUsers();
-  }, [page]);
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['user', page, search],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (search) params.append('search', search);
+      params.append('page', page.toString());
+      return apiService.get(`/api/v1/users?${params.toString()}`);
+    },
+  });
 
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      const response = await apiService.get<any>('/api/v1/users', { page, size });
-      setUsers(response.data.content);
-      setError('');
-    } catch (err: any) {
-      setError('Failed to fetch users');
-      console.error(err);
-    } finally {
-      setLoading(false);
+  const handleDelete = async (id: number) => {
+    if (confirm('Are you sure?')) {
+      try {
+        await apiService.delete(`/api/v1/users/${id}`);
+        refetch();
+        onDelete?.(id);
+      } catch (err) {
+        alert('Error deleting item');
+      }
     }
   };
 
-  const handleDelete = async (userId: number) => {
-    if (!window.confirm('Are you sure you want to deactivate this user?')) {
-      return;
-    }
+  if (isLoading) return <div className="loading">Loading...</div>;
+  if (error) return <div className="error">Error: {error.message}</div>;
 
-    try {
-      await apiService.delete(`/api/v1/users/${userId}`);
-      setUsers(users.filter(u => u.id !== userId));
-    } catch (err) {
-      setError('Failed to delete user');
-    }
-  };
-
-  if (loading) return <div className="loading">Loading users...</div>;
-  if (error) return <div className="error">{error}</div>;
+  const items = data || [];
 
   return (
-    <div className="user-list-container">
-      <h2>Users</h2>
-      <table className="user-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Status</th>
-            <th>Created</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user.id}>
-              <td>{user.id}</td>
-              <td>{user.name}</td>
-              <td>{user.email}</td>
-              <td>{user.phoneNumber || '-'}</td>
-              <td>{user.active ? 'Active' : 'Inactive'}</td>
-              <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-              <td>
-                <button onClick={() => handleDelete(user.id)}>Deactivate</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="pagination">
-        <button onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}>
-          Previous
-        </button>
-        <span>Page {page + 1}</span>
-        <button onClick={() => setPage(page + 1)}>
-          Next
-        </button>
+    <div className="userlist">
+      <h2>UserList</h2>
+      
+      <div className="search-box">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+          className="form-control"
+        />
       </div>
+
+      <div className="table-responsive">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Name</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item: any) => (
+              <tr key={item.id}>
+                <td>{item.email}</td>
+                <td>{item.name}</td>
+                <td className="actions">
+                  <button 
+                    className="btn btn-sm btn-info"
+                    onClick={() => onEdit?.(item)}
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    className="btn btn-sm btn-danger"
+                    onClick={() => handleDelete(item.id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {items.length === 0 && <p className="no-data">No data found</p>}
     </div>
   );
 };

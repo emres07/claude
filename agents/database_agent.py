@@ -6,6 +6,10 @@ from pathlib import Path
 
 from .base_agent import BaseAgent
 from skills.code_generator import DynamicCodeGenerator
+from skills.detailed_subtask_generation import DetailedSubtaskGenerator
+from skills.database_helper import DatabaseSkill
+from skills.database_implementation_skill import DatabaseImplementationSkill
+from skills.specification_parser import SpecificationParser
 
 
 class DatabaseAgent(BaseAgent):
@@ -57,7 +61,7 @@ class DatabaseAgent(BaseAgent):
         return subtask
 
     def save_subtask(self, subtask: Dict[str, Any]) -> str:
-        """Save database subtask to file."""
+        """Save database subtask to file with detailed specifications."""
         content = self.generate_metadata(
             subtask["title"],
             subtask["description"],
@@ -66,30 +70,127 @@ class DatabaseAgent(BaseAgent):
         content += f"## Domain\nDatabase\n\n"
         content += f"## Parent Task\n{subtask['parent_task_id']}\n\n"
 
+        # Generate detailed specifications
+        details = DetailedSubtaskGenerator.generate_database_subtask_details(
+            subtask["title"],
+            subtask["description"],
+            subtask.get("tables", [])
+        )
+
+        # Schema Design
+        if details.get("schema_design"):
+            content += "## Schema Design\n"
+            schema = details["schema_design"]
+            if isinstance(schema, dict):
+                for key, value in schema.items():
+                    if isinstance(value, list):
+                        content += f"### {key.replace('_', ' ').title()}\n"
+                        for item in value:
+                            content += f"- {item}\n"
+                    else:
+                        content += f"**{key.replace('_', ' ').title()}**: {value}\n"
+            content += "\n"
+
+        # Tables
         if subtask["tables"]:
-            content += "## Tables\n"
+            content += "## Tables to Create\n"
             for table in subtask["tables"]:
                 content += f"- {table}\n"
             content += "\n"
 
+        # Table Specifications
+        if details.get("table_specifications"):
+            content += "## Table Specifications\n"
+            specs = details["table_specifications"]
+            if isinstance(specs, dict):
+                for table_name, table_spec in specs.items():
+                    content += f"### {table_name}\n"
+                    if isinstance(table_spec, dict):
+                        if "columns" in table_spec:
+                            content += "**Columns:**\n"
+                            for col in table_spec["columns"]:
+                                content += f"- {col}\n"
+                        if "constraints" in table_spec:
+                            content += "**Constraints:**\n"
+                            for constraint in table_spec["constraints"]:
+                                content += f"- {constraint}\n"
+                    content += "\n"
+
+        # Indexing Strategy
+        if details.get("indexing_strategy"):
+            content += "## Indexing Strategy\n"
+            for idx in details["indexing_strategy"]:
+                content += f"- {idx}\n"
+            content += "\n"
+
+        # Integrity Constraints
+        if details.get("integrity_constraints"):
+            content += "## Integrity Constraints\n"
+            for constraint in details["integrity_constraints"]:
+                content += f"- {constraint}\n"
+            content += "\n"
+
+        # Data Relationships
+        if details.get("relationships"):
+            content += "## Data Model Relationships\n"
+            for rel in details["relationships"]:
+                content += f"- {rel}\n"
+            content += "\n"
+
+        # Migration Strategy
+        if details.get("migration_strategy"):
+            content += "## Migration Strategy\n"
+            ms = details["migration_strategy"]
+            if isinstance(ms, dict):
+                for key, value in ms.items():
+                    content += f"**{key.replace('_', ' ').title()}**: {value}\n"
+            content += "\n"
+
+        # Stored Procedures
+        if details.get("procedures"):
+            content += "## Stored Procedures/Functions\n"
+            for proc in details["procedures"]:
+                content += f"- {proc}\n"
+            content += "\n"
+
+        # Performance Considerations
+        if details.get("performance"):
+            content += "## Performance Considerations\n"
+            for perf in details["performance"]:
+                content += f"- {perf}\n"
+            content += "\n"
+
+        # Backup and Recovery
+        content += "## Backup & Recovery Strategy\n"
+        content += "- Daily incremental backups\n"
+        content += "- Weekly full database backups\n"
+        content += "- Point-in-time recovery enabled\n"
+        content += "- Backup verification and restoration testing\n\n"
+
+        # Indexes (if provided separately)
         if subtask["indexes"]:
             content += "## Indexes\n"
             for index in subtask["indexes"]:
                 content += f"- {index}\n"
             content += "\n"
 
-        if subtask["performance_critical"]:
-            content += "## Performance Considerations\nThis is performance-critical work\n\n"
-
+        # Acceptance Criteria
         content += "## Acceptance Criteria\n"
         if subtask["acceptance_criteria"]:
             for criterion in subtask["acceptance_criteria"]:
                 content += f"- [ ] {criterion}\n"
         else:
-            content += "- [ ] Schema designed and validated\n"
-            content += "- [ ] Migration scripts created\n"
-            content += "- [ ] Indexes optimized\n"
-            content += "- [ ] Backup strategy documented\n"
+            content += "- [ ] Schema designed and documented\n"
+            content += "- [ ] Migration scripts created and tested\n"
+            content += "- [ ] All tables created with proper constraints\n"
+            content += "- [ ] Indexes designed and optimized\n"
+            content += "- [ ] Data integrity rules enforced\n"
+            content += "- [ ] Stored procedures/functions created\n"
+            content += "- [ ] Relationships defined\n"
+            content += "- [ ] Backup strategy implemented\n"
+            content += "- [ ] Performance tested and validated\n"
+            content += "- [ ] Documentation complete\n"
+            content += "- [ ] Code reviewed and approved\n"
         content += "\n"
 
         content += f"## Status\n{subtask['status']}\n"
@@ -103,7 +204,7 @@ class DatabaseAgent(BaseAgent):
         )
 
         self.log_action(
-            f"Created database subtask for {subtask['parent_task_id']}: {subtask['title']}"
+            f"Created detailed database subtask for {subtask['parent_task_id']}: {subtask['title']}"
         )
         return str(filepath)
 
@@ -111,8 +212,14 @@ class DatabaseAgent(BaseAgent):
         self,
         task_id: str,
         task_title: str,
+        task: Dict[str, Any] = None,
     ) -> List[Dict[str, Any]]:
-        """Create database subtasks specific to the business process."""
+        """Create database subtasks specific to the business process or workflow."""
+        # Check if this is a workflow-based task
+        workflow = None
+        if task and "workflow" in task:
+            workflow = task["workflow"]
+
         # Map business processes to database technical specifications
         business_process = task_title.split(" - ")[0]  # Extract business process name
 
@@ -154,14 +261,42 @@ class DatabaseAgent(BaseAgent):
             },
         }
 
-        # Get specifications for this business process, or use defaults
-        spec = subtask_specs.get(business_process, {
-            "title": f"Database Implementation for {business_process}",
-            "description": f"Implement database schema and procedures for {business_process}",
-            "tables": [business_process.lower().replace(" ", "_")],
-            "indexes": [f"idx_{business_process.lower().replace(' ', '_')}"],
-            "performance_critical": False,
-        })
+        # Generate workflow-specific or process-specific spec
+        if workflow:
+            # Create workflow-specific specification
+            workflow_name = workflow.get("name", business_process)
+            workflow_data_entities = workflow.get("data_entities", [])
+            workflow_steps = workflow.get("steps", [])
+
+            # Build workflow-specific description
+            description = f"Implement database schema for {workflow_name} workflow.\n\n"
+            description += f"Workflow Steps:\n"
+            for i, step in enumerate(workflow_steps, 1):
+                description += f"{i}. {step}\n"
+            description += f"\nData entities to persist: {', '.join(workflow_data_entities)}"
+
+            # Generate table names from data entities
+            tables = [entity.lower().replace(' ', '_') for entity in workflow_data_entities]
+
+            # Generate index names for common queries
+            indexes = [f"idx_{entity.lower().replace(' ', '_')}_id" for entity in workflow_data_entities]
+
+            spec = {
+                "title": f"Database Schema for {workflow_name}",
+                "description": description,
+                "tables": tables,
+                "indexes": indexes,
+                "performance_critical": True,
+            }
+        else:
+            # Fall back to business process specifications
+            spec = subtask_specs.get(business_process, {
+                "title": f"Database Implementation for {business_process}",
+                "description": f"Implement database schema and procedures for {business_process}",
+                "tables": [business_process.lower().replace(" ", "_")],
+                "indexes": [f"idx_{business_process.lower().replace(' ', '_')}"],
+                "performance_critical": False,
+            })
 
         subtask = self.create_database_subtask(
             task_id=task_id,
@@ -172,8 +307,10 @@ class DatabaseAgent(BaseAgent):
             performance_critical=spec.get("performance_critical", False),
         )
 
-        # Store business process name for code generation
+        # Store business process/workflow name for code generation
         subtask["business_process"] = business_process
+        if workflow:
+            subtask["workflow"] = workflow
 
         return [subtask]
 
@@ -539,22 +676,28 @@ All code for this subtask has been generated in the main project folder:
     def _generate_subtask_migration(self, migrations_dir: Path, subtask: Dict[str, Any],
                                      schema_name: str) -> None:
         """Generate database migration scripts based on README specifications."""
-        # Find corresponding subtask README if it exists
         business_process = subtask.get("business_process", "")
         readme_path = self._find_subtask_readme(business_process, subtask.get("title", ""))
 
-        if readme_path and Path(readme_path).exists():
-            # Parse README specifications
-            spec = EnhancedDatabaseSkill.parse_readme(readme_path)
+        if readme_path:
+            # Parse the subtask file to extract field/column information
+            spec = SpecificationParser.parse_subtask_file(readme_path)
 
-            if spec and spec.get("title"):
-                self._generate_migration_from_spec(migrations_dir, spec)
-            else:
-                # Fallback to process-based code generation
-                self._generate_migration_by_business_process(migrations_dir, business_process, subtask.get("tables", []))
-        else:
-            # Fallback to process-based code generation
-            self._generate_migration_by_business_process(migrations_dir, business_process, subtask.get("tables", []))
+            # Extract data entities from the specification
+            data_entities = spec.get("data_entities", [])
+
+            if data_entities:
+                # Generate database code for each data entity
+                version = self._get_next_migration_version(migrations_dir)
+                for entity_name in data_entities:
+                    self._generate_table_migration_from_spec(
+                        migrations_dir, entity_name, spec, version
+                    )
+                    version += 1
+                return
+
+        # Fall back to business process-based generation
+        self._generate_migration_by_business_process(migrations_dir, business_process, subtask.get("tables", []))
 
     def _find_subtask_readme(self, business_process: str, subtask_title: str) -> str:
         """Find subtask MD file for the given business process."""
@@ -571,6 +714,50 @@ All code for this subtask has been generated in the main project folder:
                         if business_process.lower() in content.lower():
                             return str(md_file)
         return ""
+
+    def _generate_table_migration_from_spec(self, migrations_dir: Path, entity_name: str,
+                                           spec: Dict[str, Any], version: int) -> None:
+        """Generate table, CRUD package, and audit trigger migrations from specification."""
+        # Extract column definitions for this entity
+        columns = SpecificationParser.infer_table_columns(entity_name)
+        table_name = entity_name.lower()
+
+        # Generate Table Definition
+        table_code = DatabaseImplementationSkill.generate_table_full_definition(
+            table_name=table_name,
+            columns=columns,
+            indexes=[{"field": "id"}, {"field": "created_at"}],
+            unique_constraints=[]
+        )
+
+        table_path = migrations_dir / f"{version:03d}_{table_name}_table.sql"
+        table_path.write_text(table_code, encoding="utf-8")
+        self.created_files.append(table_path)
+        self.log_action(f"Generated v{version:03d}: Table definition for {entity_name}")
+
+        # Generate CRUD Package
+        version += 1
+        crud_code = DatabaseImplementationSkill.generate_crud_package_complete(
+            table_name=table_name,
+            columns=columns
+        )
+
+        crud_path = migrations_dir / f"{version:03d}_{table_name}_crud_package.sql"
+        crud_path.write_text(crud_code, encoding="utf-8")
+        self.created_files.append(crud_path)
+        self.log_action(f"Generated v{version:03d}: CRUD package for {entity_name}")
+
+        # Generate Audit Trigger
+        version += 1
+        trigger_code = DatabaseImplementationSkill.generate_audit_trigger_advanced(
+            table_name=table_name,
+            columns=columns
+        )
+
+        trigger_path = migrations_dir / f"{version:03d}_{table_name}_audit_trigger.sql"
+        trigger_path.write_text(trigger_code, encoding="utf-8")
+        self.created_files.append(trigger_path)
+        self.log_action(f"Generated v{version:03d}: Audit trigger for {entity_name}")
 
     def _generate_migration_from_spec(self, migrations_dir: Path, spec: Dict[str, Any]) -> None:
         """Generate database migrations based on parsed specification."""
@@ -623,17 +810,29 @@ All code for this subtask has been generated in the main project folder:
         return max(versions) + 1 if versions else 1
 
     def _generate_migration_by_business_process(self, migrations_dir: Path, business_process: str, tables: List[str]) -> None:
-        """Fallback: Generate migration based on business process type."""
-        if business_process == "User Management":
+        """Generate migration based on business process/workflow type."""
+        bp_lower = business_process.lower()
+
+        # Workflow-specific migrations
+        if "user" in bp_lower and "management" in bp_lower:
             self._generate_user_management_migration(migrations_dir, tables)
-        elif business_process == "Authentication & Authorization":
+        elif "auth" in bp_lower or "authentication" in bp_lower:
             self._generate_authentication_migration(migrations_dir, tables)
-        elif business_process == "Core Business Logic":
+        elif "meeting" in bp_lower and "management" in bp_lower:
+            self._generate_meeting_management_migration(migrations_dir, tables)
+        elif "meeting" in bp_lower and "completion" in bp_lower:
+            self._generate_meeting_completion_migration(migrations_dir, tables)
+        elif "calendar" in bp_lower or "scheduling" in bp_lower:
+            self._generate_calendar_migration(migrations_dir, tables)
+        elif "core" in bp_lower or "business" in bp_lower:
             self._generate_core_logic_migration(migrations_dir, tables)
-        elif business_process == "API & Integration":
+        elif "api" in bp_lower or "integration" in bp_lower:
             self._generate_api_integration_migration(migrations_dir, tables)
-        elif business_process == "Audit & Monitoring":
+        elif "audit" in bp_lower or "monitoring" in bp_lower:
             self._generate_audit_migration(migrations_dir, tables)
+        else:
+            # Generic migration for unknown workflows
+            self._generate_generic_workflow_migration(migrations_dir, tables, business_process)
 
     def _generate_user_management_migration(self, migrations_dir: Path, tables: List[str]) -> None:
         """Generate user management tables and procedures."""
@@ -698,6 +897,73 @@ All code for this subtask has been generated in the main project folder:
             crud_sql_path.write_text(crud_content, encoding="utf-8")
             self.created_files.append(crud_sql_path)
             self.log_action("Generated audit procedures")
+
+    def _generate_meeting_management_migration(self, migrations_dir: Path, tables: List[str]) -> None:
+        """Generate meeting management workflow tables and procedures."""
+        version = self._get_next_migration_version(migrations_dir)
+
+        tables_sql_path = migrations_dir / f"{version:03d}_meeting_management_tables.sql"
+        if not tables_sql_path.exists():
+            tables_content = "-- Meeting Management Workflow Tables\n"
+            tables_content += "-- Tables: meeting, calendar, timeslot, attendee\n\n"
+            for table in tables:
+                tables_content += DatabaseSkill.generate_table_template(table) + "\n"
+            tables_sql_path.write_text(tables_content, encoding="utf-8")
+            self.created_files.append(tables_sql_path)
+            self.log_action(f"Generated v{version:03d}: Meeting management tables")
+
+        # Generate CRUD procedures
+        version += 1
+        crud_sql_path = migrations_dir / f"{version:03d}_meeting_crud_procedures.sql"
+        if not crud_sql_path.exists():
+            crud_content = "-- Meeting Management CRUD Procedures\n"
+            for table in tables:
+                crud_content += DatabaseSkill.generate_crud_procedures(table) + "\n\n"
+            crud_sql_path.write_text(crud_content, encoding="utf-8")
+            self.created_files.append(crud_sql_path)
+            self.log_action(f"Generated v{version:03d}: Meeting CRUD procedures")
+
+    def _generate_meeting_completion_migration(self, migrations_dir: Path, tables: List[str]) -> None:
+        """Generate meeting completion workflow tables."""
+        version = self._get_next_migration_version(migrations_dir)
+
+        tables_sql_path = migrations_dir / f"{version:03d}_meeting_completion_tables.sql"
+        if not tables_sql_path.exists():
+            tables_content = "-- Meeting Completion Workflow Tables\n"
+            tables_content += "-- Tables: meeting_notes, completion_audit, attendee_status\n\n"
+            for table in tables:
+                tables_content += DatabaseSkill.generate_table_template(table) + "\n"
+            tables_sql_path.write_text(tables_content, encoding="utf-8")
+            self.created_files.append(tables_sql_path)
+            self.log_action(f"Generated v{version:03d}: Meeting completion tables")
+
+    def _generate_calendar_migration(self, migrations_dir: Path, tables: List[str]) -> None:
+        """Generate calendar/scheduling workflow tables."""
+        version = self._get_next_migration_version(migrations_dir)
+
+        tables_sql_path = migrations_dir / f"{version:03d}_calendar_tables.sql"
+        if not tables_sql_path.exists():
+            tables_content = "-- Calendar/Scheduling Workflow Tables\n"
+            tables_content += "-- Tables: calendar, timeslot, availability, schedule\n\n"
+            for table in tables:
+                tables_content += DatabaseSkill.generate_table_template(table) + "\n"
+            tables_sql_path.write_text(tables_content, encoding="utf-8")
+            self.created_files.append(tables_sql_path)
+            self.log_action(f"Generated v{version:03d}: Calendar tables")
+
+    def _generate_generic_workflow_migration(self, migrations_dir: Path, tables: List[str], workflow_name: str) -> None:
+        """Generate generic migration for unknown workflows."""
+        version = self._get_next_migration_version(migrations_dir)
+        safe_name = workflow_name.lower().replace(" ", "_").replace("-", "_")
+
+        tables_sql_path = migrations_dir / f"{version:03d}_{safe_name}_tables.sql"
+        if not tables_sql_path.exists():
+            tables_content = f"-- {workflow_name} Workflow Tables\n"
+            for table in tables:
+                tables_content += DatabaseSkill.generate_table_template(table) + "\n"
+            tables_sql_path.write_text(tables_content, encoding="utf-8")
+            self.created_files.append(tables_sql_path)
+            self.log_action(f"Generated v{version:03d}: {workflow_name} tables")
 
     def _generate_all_migrations(self, migrations_dir: Path, schema_name: str) -> None:
         """Generate all migration scripts (backward compatibility)."""

@@ -1,39 +1,32 @@
 spring:
   application:
-    name: backend-application
-
-  datasource:
-    url: jdbc:oracle:thin:@localhost:1521:xe
-    username: ${DB_USER:todo}
-    password: ${DB_PASSWORD:welcome123}
-    driver-class-name: oracle.jdbc.OracleDriver
-
+    name: calendar-app
   jpa:
     hibernate:
       ddl-auto: validate
+    show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.OracleDialect
-        jdbc:
-          batch_size: 10
-        order_inserts: true
-        order_updates: true
-    show-sql: false
-    open-in-view: false
-
-  security:
-    user:
-      name: admin
-      password: admin
+        format_sql: true
+        use_sql_comments: true
+  datasource:
+    url: jdbc:oracle:thin:@localhost:1521:xe
+    username: calendar_app
+    password: welcome123
+    driver-class-name: oracle.jdbc.OracleDriver
 
 server:
   port: 8080
   servlet:
-    context-path: /api
+    context-path: /api/v1
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
 
 logging:
   level:
     root: INFO
-    com.example: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    com.example.calendarapp: DEBUG

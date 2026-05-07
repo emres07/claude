@@ -1,105 +1,76 @@
 package com.example.calendarapp.controller;
 
+import com.example.calendarapp.entity.User;
+import com.example.calendarapp.service.UserService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.validation.annotation.Validated;
-import org.springframework.data.domain.Page;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import jakarta.validation.Valid;
+import java.util.List;
 
-import com.example.calendarapp.service.UserService;
-import com.example.calendarapp.dto.UserRegistrationRequest;
-import com.example.calendarapp.dto.UserProfileResponse;
-import com.example.calendarapp.dto.UserProfileRequest;
-import com.example.calendarapp.dto.ApiResponse;
-
-/**
- * UserController - Build comprehensive REST API controllers with proper HTTP methods, request/response handling, error responses, and integration with backend services
- *
- * REST endpoints for user management operations
- * APIs:
- * - /api/v1/
- */
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/user")
 @RequiredArgsConstructor
-@Validated
 @Slf4j
 public class UserController {
 
-    private final UserService userService;
+    private final UserService service;
 
-    /**
-     * Register a new user
-     * POST /api/v1/users/register
-     */
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse<UserProfileResponse>> registerUser(
-            @Valid @RequestBody UserRegistrationRequest request) {
-        log.info("POST /api/v1/users/register - Registering user: {}", request.getEmail());
-
-        UserProfileResponse response = userService.registerUser(request);
-
-        return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(ApiResponse.success("User registered successfully", response));
+    @PostMapping
+    public ResponseEntity<User> create(@RequestBody User entity) {
+        log.info("POST /api/v1/user - Creating new User");
+        try {
+            User created = service.create(entity);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (IllegalArgumentException e) {
+            log.warn("Validation error: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
     }
 
-    /**
-     * Get user by ID
-     * GET /api/v1/users/{id}
-     */
-    @GetMapping("/<built-in function id>")
-    public ResponseEntity<ApiResponse<UserProfileResponse>> getUserById(@PathVariable Long id) {
-        log.info("GET /api/v1/users/{} - Fetching user", id);
-
-        UserProfileResponse response = userService.getUserById(id);
-
-        return ResponseEntity.ok(ApiResponse.success("User retrieved successfully", response));
-    }
-
-    /**
-     * Get all active users with pagination
-     * GET /api/v1/users?page=0&size=20
-     */
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<UserProfileResponse>>> getAllUsers(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        log.info("GET /api/v1/users - Fetching all active users - page: {}, size: {}", page, size);
-
-        Page<UserProfileResponse> users = userService.getAllActiveUsers(page, size);
-
-        return ResponseEntity.ok(ApiResponse.success("Users retrieved successfully", users));
+    public ResponseEntity<List<User>> getAll() {
+        log.info("GET /api/v1/user - Fetching all User");
+        List<User> entities = service.findAll();
+        return ResponseEntity.ok(entities);
     }
 
-    /**
-     * Update user profile
-     * PUT /api/v1/users/{id}
-     */
-    @PutMapping("/<built-in function id>")
-    public ResponseEntity<ApiResponse<UserProfileResponse>> updateUser(
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getById(@PathVariable Long id) {
+        log.info("GET /api/v1/user/{} - Fetching User", id);
+        return service.findById(id)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> {
+                log.warn("User not found with id: {}", id);
+                return ResponseEntity.notFound().build();
+            });
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<User> update(
             @PathVariable Long id,
-            @Valid @RequestBody UserProfileRequest request) {
-        log.info("PUT /api/v1/users/{} - Updating user", id);
-
-        UserProfileResponse response = userService.updateUserProfile(id, request);
-
-        return ResponseEntity.ok(ApiResponse.success("User updated successfully", response));
+            @RequestBody User entity) {
+        log.info("PUT /api/v1/user/{} - Updating User", id);
+        try {
+            User updated = service.update(id, entity);
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            log.warn("Update failed: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    /**
-     * Deactivate user account
-     * DELETE /api/v1/users/{id}
-     */
-    @DeleteMapping("/<built-in function id>")
-    public ResponseEntity<ApiResponse<Void>> deactivateUser(@PathVariable Long id) {
-        log.info("DELETE /api/v1/users/{} - Deactivating user", id);
-
-        userService.deactivateUser(id);
-
-        return ResponseEntity.ok(ApiResponse.success("User deactivated successfully", null));
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        log.info("DELETE /api/v1/user/{} - Deleting User", id);
+        try {
+            service.delete(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            log.warn("Delete failed: {}", e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
     }
-}
+
+    }

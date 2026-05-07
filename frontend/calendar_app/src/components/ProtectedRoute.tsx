@@ -1,38 +1,22 @@
-'use client';
-
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
+import React, { useState } from 'react';
 interface ProtectedrouteProps {
-  // Define props here
-}
+  // TODO: Add component props
+  }
 
-interface ProtectedrouteState {
-  // Define state here
-}
-
-export const Protectedroute: React.FC<ProtectedrouteProps> = (props) => {
-  const [state, setState] = useState<ProtectedrouteState>({
-    // Initialize state
-  });
-
-  useEffect(() => {
-    // Initialize component
+const Protectedroute: React.FC<ProtectedrouteProps> = (props) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [data, setData] = useState<any>(null);
+  React.useEffect(() => {
+    // TODO: Fetch data on mount
   }, []);
 
-  const handleLoad = async () => {
-    try {
-      const response = await axios.get('/api/data');
-      // Handle response
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
+  if (loading) return <div className="loading">Loading...</div>;
+  if (error) return <div className="error">{error}</div>;
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold">Protectedroute</h1>
-      {/* Component JSX */}
+    <div className="protectedroute">
+      <h2>Protectedroute</h2>
+      {/* TODO: Add component content */}
     </div>
   );
 };
