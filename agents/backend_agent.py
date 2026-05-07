@@ -297,63 +297,96 @@ Generated implementation files for this subtask.
                 self._generate_subtask_5_security(subtask_folder, base_package)
 
     def _generate_subtask_1_setup(self, subtask_folder: Path, base_package: str) -> None:
-        """Generate Spring Boot setup files."""
+        """Generate Spring Boot setup files with proper structure."""
+        # Create pom.xml
         pom_path = subtask_folder / "pom.xml"
         pom_path.write_text(BackendSkill.generate_pom_xml("setup"), encoding="utf-8")
         self.created_files.append(pom_path)
-        self.log_action("Generated subtask 1: pom.xml")
+
+        # Create application.yml
+        resources_dir = subtask_folder / "src" / "main" / "resources"
+        resources_dir.mkdir(parents=True, exist_ok=True)
+
+        app_yml = resources_dir / "application.yml"
+        app_yml.write_text(BackendSkill.generate_application_yml(), encoding="utf-8")
+        self.created_files.append(app_yml)
+
+        # Create main application class
+        java_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package
+        java_dir.mkdir(parents=True, exist_ok=True)
+
+        app_class = """package com.example;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class Application {
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+"""
+        app_class_path = java_dir / "Application.java"
+        app_class_path.write_text(app_class, encoding="utf-8")
+        self.created_files.append(app_class_path)
+
+        self.log_action("Generated subtask 1: Setup with pom.xml and application.yml")
 
     def _generate_subtask_2_entities_repos(self, subtask_folder: Path, base_package: str) -> None:
-        """Generate JPA entities and repositories."""
-        entities_dir = subtask_folder / "entities"
-        entities_dir.mkdir(parents=True, exist_ok=True)
+        """Generate JPA entities and repositories with proper structure."""
+        # Entity directory
+        entity_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package / "entity"
+        entity_dir.mkdir(parents=True, exist_ok=True)
 
-        repos_dir = subtask_folder / "repositories"
-        repos_dir.mkdir(parents=True, exist_ok=True)
+        # Repository directory
+        repo_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package / "repository"
+        repo_dir.mkdir(parents=True, exist_ok=True)
 
         for entity in ["user", "task", "audit"]:
             # Create entity
-            entity_path = entities_dir / f"{entity.title()}.java"
+            entity_path = entity_dir / f"{entity.title()}.java"
             entity_path.write_text(BackendSkill.generate_entity_template(entity), encoding="utf-8")
             self.created_files.append(entity_path)
 
             # Create repository
-            repo_path = repos_dir / f"{entity.title()}Repository.java"
+            repo_path = repo_dir / f"{entity.title()}Repository.java"
             repo_path.write_text(BackendSkill.generate_repository_template(entity), encoding="utf-8")
             self.created_files.append(repo_path)
 
-        self.log_action("Generated subtask 2: Entities and Repositories")
+        self.log_action("Generated subtask 2: Entities and Repositories with src structure")
 
     def _generate_subtask_3_services(self, subtask_folder: Path, base_package: str) -> None:
-        """Generate service layer."""
-        services_dir = subtask_folder / "services"
-        services_dir.mkdir(parents=True, exist_ok=True)
+        """Generate service layer with proper structure."""
+        service_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package / "service"
+        service_dir.mkdir(parents=True, exist_ok=True)
 
         for entity in ["user", "task", "audit"]:
-            service_path = services_dir / f"{entity.title()}Service.java"
+            service_path = service_dir / f"{entity.title()}Service.java"
             service_path.write_text(BackendSkill.generate_service_template(entity), encoding="utf-8")
             self.created_files.append(service_path)
 
-        self.log_action("Generated subtask 3: Services")
+        self.log_action("Generated subtask 3: Services with src structure")
 
     def _generate_subtask_4_controllers(self, subtask_folder: Path, base_package: str) -> None:
-        """Generate REST controllers."""
-        controllers_dir = subtask_folder / "controllers"
-        controllers_dir.mkdir(parents=True, exist_ok=True)
+        """Generate REST controllers with proper structure."""
+        controller_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package / "controller"
+        controller_dir.mkdir(parents=True, exist_ok=True)
 
         for entity in ["user", "task", "audit"]:
-            controller_path = controllers_dir / f"{entity.title()}Controller.java"
+            controller_path = controller_dir / f"{entity.title()}Controller.java"
             controller_path.write_text(BackendSkill.generate_controller_template(entity), encoding="utf-8")
             self.created_files.append(controller_path)
 
-        self.log_action("Generated subtask 4: Controllers")
+        self.log_action("Generated subtask 4: Controllers with src structure")
 
     def _generate_subtask_5_security(self, subtask_folder: Path, base_package: str) -> None:
-        """Generate security configuration."""
-        security_dir = subtask_folder / "security"
-        security_dir.mkdir(parents=True, exist_ok=True)
+        """Generate security configuration with proper structure."""
+        config_dir = subtask_folder / "src" / "main" / "java" / "com" / "example" / base_package / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
 
-        security_config = """package com.example.security;
+        security_config = """package com.example.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -377,8 +410,8 @@ public class SecurityConfig {
     }
 }
 """
-        security_path = security_dir / "SecurityConfig.java"
+        security_path = config_dir / "SecurityConfig.java"
         security_path.write_text(security_config, encoding="utf-8")
         self.created_files.append(security_path)
 
-        self.log_action("Generated subtask 5: Security Configuration")
+        self.log_action("Generated subtask 5: Security Configuration with src structure")
