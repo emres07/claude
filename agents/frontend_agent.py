@@ -149,14 +149,17 @@ class FrontendAgent(BaseAgent):
 
         return subtasks
 
-    def generate_project_structure(self, project_name: str, subtasks: List[Dict[str, Any]] = None) -> None:
+    def generate_project_structure(self, project_name: str, subtasks: List[Dict[str, Any]] = None,
+                                  subtask_indices: List[int] = None) -> None:
         """Generate Next.js project structure based on subtasks."""
         project_folder = self.code_folder / project_name.lower().replace(' ', '_')
         project_folder.mkdir(parents=True, exist_ok=True)
 
         # Only generate code for subtasks passed in
         if subtasks:
-            for idx, subtask in enumerate(subtasks, 1):
+            for i, subtask in enumerate(subtasks):
+                # Use provided indices or default to enumerate indices
+                idx = subtask_indices[i] if subtask_indices and i < len(subtask_indices) else i + 1
                 self._generate_subtask_code(project_folder, subtask, idx, project_name)
 
         # Generate subtask documentation
@@ -285,7 +288,11 @@ class FrontendAgent(BaseAgent):
         subtasks_folder.mkdir(parents=True, exist_ok=True)
 
         for idx, subtask in enumerate(subtasks, 1):
-            subtask_name = subtask["title"].lower().replace(" - ", "_").replace(" ", "_").replace("&", "")
+            subtask_name = (subtask["title"].lower()
+                          .replace(" - ", "_")
+                          .replace(" ", "_")
+                          .replace("&", "")
+                          .replace(":", ""))
             subtask_folder = subtasks_folder / f"{idx:02d}_{subtask_name}"
             subtask_folder.mkdir(parents=True, exist_ok=True)
 

@@ -221,7 +221,8 @@ class DatabaseAgent(BaseAgent):
             "agent_id": self.agent_id,
         }
 
-    def generate_project_structure(self, project_name: str, subtasks: List[Dict[str, Any]] = None, schema_name: str = None) -> None:
+    def generate_project_structure(self, project_name: str, subtasks: List[Dict[str, Any]] = None,
+                                  schema_name: str = None, subtask_indices: List[int] = None) -> None:
         """Generate versioned Oracle database scripts based on subtasks."""
         if schema_name is None:
             schema_name = project_name.lower().replace(' ', '_')
@@ -235,7 +236,9 @@ class DatabaseAgent(BaseAgent):
 
         # Only generate code for subtasks passed in
         if subtasks:
-            for idx, subtask in enumerate(subtasks, 1):
+            for i, subtask in enumerate(subtasks):
+                # Use provided indices or default to enumerate indices
+                idx = subtask_indices[i] if subtask_indices and i < len(subtask_indices) else i + 1
                 self._generate_subtask_migration(migrations_dir, subtask, idx, schema_name)
         else:
             # If no subtasks, generate all (backward compatibility)
@@ -435,7 +438,11 @@ For issues:
         subtasks_folder.mkdir(parents=True, exist_ok=True)
 
         for idx, subtask in enumerate(subtasks, 1):
-            subtask_name = subtask["title"].lower().replace(" - ", "_").replace(" ", "_").replace("&", "")
+            subtask_name = (subtask["title"].lower()
+                          .replace(" - ", "_")
+                          .replace(" ", "_")
+                          .replace("&", "")
+                          .replace(":", ""))
             subtask_folder = subtasks_folder / f"{idx:02d}_{subtask_name}"
             subtask_folder.mkdir(parents=True, exist_ok=True)
 

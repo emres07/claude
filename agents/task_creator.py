@@ -51,7 +51,7 @@ class TaskCreatorAgent(BaseAgent):
 
     def save_task(self, task: Dict[str, Any]) -> str:
         """Save main task to file."""
-        task_id = task["id"]
+        task_id = task["id"].replace(":", "_").replace("/", "_")
 
         # Build markdown content
         content = self.generate_metadata(task["title"], task["description"])

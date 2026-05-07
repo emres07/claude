@@ -133,8 +133,8 @@ class AgentTeamOrchestrator:
                 self.created_tasks["backend"].append(subtask_file)
                 print(f"  [OK] {phase_subtask['title']}")
 
-                # Generate backend code for this phase
-                self.backend_agent.generate_project_structure(project_name, [phase_subtask])
+                # Generate backend code for this phase with correct index
+                self.backend_agent.generate_project_structure(project_name, [phase_subtask], [phase_num])
                 print(f"  [OK] Backend code generated for phase {phase_num}\n")
             except Exception as e:
                 print(f"  [ERROR] Backend error: {str(e)}\n")
@@ -153,8 +153,8 @@ class AgentTeamOrchestrator:
                 self.created_tasks["frontend"].append(subtask_file)
                 print(f"  [OK] {phase_subtask['title']}")
 
-                # Generate frontend code for this phase
-                self.frontend_agent.generate_project_structure(project_name, [phase_subtask])
+                # Generate frontend code for this phase with correct index
+                self.frontend_agent.generate_project_structure(project_name, [phase_subtask], [phase_num])
                 print(f"  [OK] Frontend code generated for phase {phase_num}\n")
             except Exception as e:
                 print(f"  [ERROR] Frontend error: {str(e)}\n")
@@ -173,8 +173,8 @@ class AgentTeamOrchestrator:
                 self.created_tasks["database"].append(subtask_file)
                 print(f"  [OK] {phase_subtask['title']}")
 
-                # Generate database code for this phase
-                self.database_agent.generate_project_structure(project_name, [phase_subtask])
+                # Generate database code for this phase with correct index
+                self.database_agent.generate_project_structure(project_name, [phase_subtask], None, [phase_num])
                 print(f"  [OK] Database code generated for phase {phase_num}\n")
             except Exception as e:
                 print(f"  [ERROR] Database error: {str(e)}\n")
