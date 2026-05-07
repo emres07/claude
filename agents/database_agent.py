@@ -204,137 +204,499 @@ class DatabaseAgent(BaseAgent):
         }
 
     def generate_project_structure(self, project_name: str, schema_name: str = None) -> None:
-        """Generate complete Oracle database project structure."""
+        """Generate versioned Oracle database scripts (no execution, version control only)."""
         if schema_name is None:
             schema_name = project_name.lower().replace(' ', '_')
 
         project_folder = self.code_folder / project_name.lower().replace(' ', '_')
         project_folder.mkdir(parents=True, exist_ok=True)
 
-        # Create schema creation script
-        schema_sql_path = project_folder / "001_schema_creation.sql"
+        # Create migrations folder with versioning
+        migrations_dir = project_folder / "migrations"
+        migrations_dir.mkdir(parents=True, exist_ok=True)
+
+        # ============= VERSION 001: Schema Creation =============
+        schema_sql_path = migrations_dir / "001_schema_creation.sql"
         schema_sql_path.write_text(
             DatabaseSkill.generate_oracle_schema(schema_name),
             encoding="utf-8"
         )
         self.created_files.append(schema_sql_path)
-        self.log_action(f"Generated schema creation script for {schema_name}")
+        self.log_action(f"Generated v001: Schema creation for {schema_name}")
 
-        # Create tables
-        tables_dir = project_folder / "tables"
-        tables_dir.mkdir(parents=True, exist_ok=True)
-
+        # ============= VERSION 002: Create Tables =============
         tables = ["user", "transaction", "audit"]
-        for table in tables:
-            table_sql_path = tables_dir / f"02_{table}_table.sql"
-            table_sql_path.write_text(
-                DatabaseSkill.generate_table_template(table),
-                encoding="utf-8"
-            )
-            self.created_files.append(table_sql_path)
 
-        # Create CRUD procedures
-        procedures_dir = project_folder / "procedures"
-        procedures_dir.mkdir(parents=True, exist_ok=True)
+        # Create combined tables script for version 002
+        tables_dir = migrations_dir
+        tables_sql_path = tables_dir / "002_create_tables.sql"
+        tables_content = "-- ============================================================\n"
+        tables_content += "-- VERSION 002: Create Tables\n"
+        tables_content += "-- ============================================================\n\n"
 
         for table in tables:
-            crud_path = procedures_dir / f"03_{table}_crud.sql"
-            crud_path.write_text(
-                DatabaseSkill.generate_crud_procedures(table),
-                encoding="utf-8"
-            )
-            self.created_files.append(crud_path)
+            tables_content += DatabaseSkill.generate_table_template(table) + "\n"
 
-        # Create migration script
-        migration_path = project_folder / "migrations" / "001_initial.sql"
-        migration_path.parent.mkdir(parents=True, exist_ok=True)
-        migration_path.write_text(
-            DatabaseSkill.generate_migration_script("001"),
-            encoding="utf-8"
-        )
-        self.created_files.append(migration_path)
+        tables_sql_path.write_text(tables_content, encoding="utf-8")
+        self.created_files.append(tables_sql_path)
+        self.log_action(f"Generated v002: Create all tables")
 
-        # Create packages
-        packages_dir = project_folder / "packages"
-        packages_dir.mkdir(parents=True, exist_ok=True)
+        # ============= VERSION 003: CRUD Procedures =============
+        crud_sql_path = tables_dir / "003_crud_procedures.sql"
+        crud_content = "-- ============================================================\n"
+        crud_content += "-- VERSION 003: Create CRUD Stored Procedures\n"
+        crud_content += "-- ============================================================\n\n"
 
-        # Create setup script
-        setup_script = project_folder / "setup.sh"
-        setup_script.write_text(
-            DatabaseSkill.generate_oracle_setup_script(),
-            encoding="utf-8"
-        )
-        self.created_files.append(setup_script)
+        for table in tables:
+            crud_content += DatabaseSkill.generate_crud_procedures(table) + "\n\n"
 
-        # Create README
-        readme_path = project_folder / "README.md"
-        readme_content = f"""# {project_name} - Database Schema
+        crud_sql_path.write_text(crud_content, encoding="utf-8")
+        self.created_files.append(crud_sql_path)
+        self.log_action(f"Generated v003: CRUD procedures for all tables")
 
-## Schema Information
+        # ============= VERSION TRACKING FILE =============
+        migration_status_path = migrations_dir / ".migration_status"
+        migration_status = """{
+  "current_version": "003",
+  "database": "oracle",
+  "created_at": "2026-05-07",
+  "migrations": [
+    {
+      "version": "001",
+      "name": "schema_creation",
+      "description": "Create schema, tablespace, and user",
+      "status": "pending",
+      "file": "001_schema_creation.sql",
+      "executed": false
+    },
+    {
+      "version": "002",
+      "name": "create_tables",
+      "description": "Create user, transaction, and audit tables",
+      "status": "pending",
+      "file": "002_create_tables.sql",
+      "executed": false
+    },
+    {
+      "version": "003",
+      "name": "crud_procedures",
+      "description": "Create CRUD stored procedures and packages",
+      "status": "pending",
+      "file": "003_crud_procedures.sql",
+      "executed": false
+    }
+  ],
+  "notes": "Scripts are versioned but NOT auto-executed. Manual execution required."
+}
+"""
+        migration_status_path.write_text(migration_status, encoding="utf-8")
+        self.created_files.append(migration_status_path)
 
-- **Schema Name**: {schema_name}
-- **Database**: Oracle 21c/23c
-- **Connection String**: jdbc:oracle:thin:@localhost:1521:xe
+        # ============= MIGRATION GUIDE =============
+        migration_guide_path = migrations_dir / "README.md"
+        migration_guide = f"""# {project_name} - Database Migrations
 
-## Directory Structure
+## Overview
 
-- `001_schema_creation.sql` - Initial schema and user setup
-- `tables/` - Table definitions
-- `procedures/` - CRUD stored procedures
-- `packages/` - PL/SQL packages
-- `migrations/` - Migration scripts
-- `setup.sh` - Automated setup script
+All database changes are versioned and organized in this `migrations/` folder.
+**Scripts are NOT automatically executed** - manual execution is required for safety.
 
-## CRUD Operations
+## Current Version: v003
 
-All tables include:
-- INSERT procedure
-- SELECT procedure (single & all)
-- UPDATE procedure
-- DELETE procedure
-- Audit triggers
-- Indexes for performance
+### Migration History
 
-## Setup
+| Version | Name | Description | Status | File |
+|---------|------|-------------|--------|------|
+| 001 | Schema Creation | Create schema, tablespace, user | Pending | `001_schema_creation.sql` |
+| 002 | Create Tables | Create user, transaction, audit tables | Pending | `002_create_tables.sql` |
+| 003 | CRUD Procedures | Create stored procedures & packages | Pending | `003_crud_procedures.sql` |
 
+## How to Execute Migrations
+
+### Prerequisites
+- Oracle Database 21c or 23c installed
+- SQL*Plus access
+- Sufficient privileges (DBA or schema creation)
+
+### Manual Execution Steps
+
+#### Step 1: Execute v001 (Schema Creation)
 ```bash
-# Run setup script
-./setup.sh
-
-# Connect to SQL*Plus
 sqlplus /nolog
-
-# In SQL*Plus:
-@001_schema_creation.sql
-@tables/02_user_table.sql
-@tables/02_transaction_table.sql
-@tables/02_audit_table.sql
-@procedures/03_user_crud.sql
-@procedures/03_transaction_crud.sql
-@procedures/03_audit_crud.sql
+SQL> CONNECT / AS SYSDBA
+SQL> @migrations/001_schema_creation.sql
 ```
 
-## Tables Created
+This creates:
+- Tablespace `{schema_name.lower()}_ts`
+- User `{schema_name.lower()}` with password `welcome123`
+- Required privileges
+- Sequence for auto-increment
 
-1. **user** - User master table
-2. **transaction** - Transaction records
-3. **audit** - Audit trail
+#### Step 2: Execute v002 (Create Tables)
+```bash
+sqlplus /nolog
+SQL> CONNECT {schema_name.lower()}/welcome123@xe
+SQL> @migrations/002_create_tables.sql
+```
 
-Each table includes:
-- Primary key
-- Timestamps (created_at, updated_at)
-- Audit triggers
-- Indexes
+This creates:
+- `user` table with columns and indexes
+- `transaction` table for transaction records
+- `audit` table for audit trail
+- Audit triggers for automatic logging
 
-## Best Practices
+#### Step 3: Execute v003 (CRUD Procedures)
+```bash
+sqlplus /nolog
+SQL> CONNECT {schema_name.lower()}/welcome123@xe
+SQL> @migrations/003_crud_procedures.sql
+```
 
-- Use parameters for security
-- All procedures with error handling
-- Automatic audit trail
-- Transaction safety
-- Proper indexing
+This creates:
+- Stored procedures: `sp_user_insert`, `sp_user_get`, `sp_user_update`, `sp_user_delete`
+- Stored procedures for `transaction` and `audit` tables
+- PL/SQL packages: `pkg_user_ops`, `pkg_transaction_ops`, `pkg_audit_ops`
+
+## Supported Operations
+
+### User Management
+```sql
+-- Insert user
+EXEC pkg_user_ops.insert_record('user@email.com', 'password', p_id);
+
+-- Get user by ID
+EXEC pkg_user_ops.get_record(1, p_cursor);
+
+-- Update user
+EXEC pkg_user_ops.update_record(1, 'new@email.com', 'new password');
+
+-- Delete user
+EXEC pkg_user_ops.delete_record(1);
+```
+
+### Transaction Management
+```sql
+-- Similar operations for transactions
+EXEC pkg_transaction_ops.insert_record(...);
+EXEC pkg_transaction_ops.get_record(...);
+EXEC pkg_transaction_ops.update_record(...);
+EXEC pkg_transaction_ops.delete_record(...);
+```
+
+### Audit Trail
+```sql
+-- Query audit table
+SELECT * FROM audit ORDER BY operation_time DESC;
+```
+
+## Version Control Best Practices
+
+1. **Never modify existing migrations** - Create new versions instead
+2. **Always increment version numbers** - 001, 002, 003, etc.
+3. **Document changes** - Add description to each migration
+4. **Test before execution** - Run in test environment first
+5. **Keep .migration_status updated** - Track executed migrations
+6. **Commit to Git** - Version control all SQL files
+
+## Adding New Migrations
+
+To add a new migration:
+
+1. Create file: `migrations/00X_description.sql`
+2. Increment version in `.migration_status`
+3. Add migration record with status "pending"
+4. Test the script
+5. Execute manually when ready
+6. Update `.migration_status` to "executed"
+7. Commit changes to Git
+
+## Rollback Procedures
+
+### Rollback v003 (Drop Procedures)
+```sql
+DROP PACKAGE pkg_user_ops;
+DROP PACKAGE pkg_transaction_ops;
+DROP PACKAGE pkg_audit_ops;
+DROP PROCEDURE sp_user_insert;
+DROP PROCEDURE sp_user_get;
+-- ... drop all procedures
+```
+
+### Rollback v002 (Drop Tables)
+```sql
+DROP TABLE audit;
+DROP TABLE transaction;
+DROP TABLE user;
+```
+
+### Rollback v001 (Drop Schema)
+```sql
+DROP USER {schema_name.lower()} CASCADE;
+DROP TABLESPACE {schema_name.lower()}_ts INCLUDING CONTENTS AND DATAFILES;
+```
+
+## Troubleshooting
+
+### Error: Table already exists
+**Cause**: Migration already executed
+**Solution**: Check `.migration_status` - mark as executed and skip
+
+### Error: Insufficient privileges
+**Cause**: Connected user doesn't have DBA rights
+**Solution**: Connect as SYSDBA or schema owner
+
+### Error: Tablespace not found
+**Cause**: v001 not executed yet
+**Solution**: Execute migrations in order (001 → 002 → 003)
+
+### Error: Procedure not found
+**Cause**: v003 not executed
+**Solution**: Execute v003 migration script
+
+## File Structure
+
+```
+migrations/
+├── 001_schema_creation.sql    # Version 001: Schema setup
+├── 002_create_tables.sql      # Version 002: Table definitions
+├── 003_crud_procedures.sql    # Version 003: Stored procedures
+├── .migration_status          # Version tracking (JSON)
+├── .executed_migrations       # (Created after execution)
+└── README.md                  # This file
+```
+
+## Integration with CI/CD
+
+To automate migrations in CI/CD:
+
+```bash
+#!/bin/bash
+# run_migrations.sh
+
+SQLPLUS_PATH="/opt/oracle/client/bin/sqlplus"
+MIGRATIONS_DIR="migrations"
+MIGRATION_STATUS="$MIGRATIONS_DIR/.migration_status"
+
+# Check current version
+CURRENT_VERSION=$(grep '"current_version"' "$MIGRATION_STATUS" | grep -oE '[0-9]+')
+
+# Execute pending migrations
+for v in 001 002 003; do
+  if [ $v -gt $CURRENT_VERSION ]; then
+    echo "Executing migration v$v..."
+    $SQLPLUS_PATH user/password@xe @$MIGRATIONS_DIR/${v}_*.sql
+    if [ $? -eq 0 ]; then
+      echo "v$v executed successfully"
+    else
+      echo "v$v execution failed"
+      exit 1
+    fi
+  fi
+done
+```
+
+## Next Steps
+
+1. ✅ Review migration scripts in this folder
+2. 📝 Execute migrations in order (001 → 002 → 003)
+3. 🧪 Test CRUD operations
+4. 📊 Monitor audit trail
+5. 🔄 Create new migrations as needed
+6. 🐙 Commit to version control
+
+---
+
+**Important**: Scripts are versioned for safety and auditability. Always test in non-production first! 🔒
+"""
+        migration_guide_path.write_text(migration_guide, encoding="utf-8")
+        self.created_files.append(migration_guide_path)
+
+        # ============= EXECUTION LOG (EMPTY) =============
+        execution_log_path = migrations_dir / ".executed_migrations"
+        execution_log = """{
+  "last_execution": null,
+  "executed_migrations": [],
+  "notes": "This file is updated when migrations are manually executed"
+}
+"""
+        execution_log_path.write_text(execution_log, encoding="utf-8")
+        self.created_files.append(execution_log_path)
+
+        # ============= MAIN README =============
+        readme_path = project_folder / "README.md"
+        readme_content = f"""# {project_name} - Database Component
+
+## Overview
+
+Oracle database schema and stored procedures for **{project_name}**.
+
+- **Database Type**: Oracle 21c/23c
+- **Schema Name**: {schema_name}
+- **Versioning**: Semantic versioning (v001, v002, v003...)
+- **Status**: NOT auto-executed - manual execution required
+
+## 📂 Structure
+
+```
+.
+├── migrations/                 # Versioned SQL migration scripts
+│   ├── 001_schema_creation.sql     # v001: Schema & user setup
+│   ├── 002_create_tables.sql       # v002: Table definitions
+│   ├── 003_crud_procedures.sql     # v003: Stored procedures
+│   ├── .migration_status           # Version tracking (JSON)
+│   ├── .executed_migrations        # Execution history (JSON)
+│   └── README.md                   # Migration guide
+└── README.md                   # This file
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+```bash
+# Oracle Database 21c/23c
+# SQL*Plus client
+# DBA or schema creation privileges
+```
+
+### Execute Migrations
+
+```bash
+# Step 1: Create schema (as DBA)
+sqlplus / AS SYSDBA
+@migrations/001_schema_creation.sql
+
+# Step 2: Create tables (as schema user)
+sqlplus {schema_name.lower()}/welcome123@xe
+@migrations/002_create_tables.sql
+
+# Step 3: Create procedures (as schema user)
+@migrations/003_crud_procedures.sql
+```
+
+### Verify Installation
+
+```sql
+-- Check tables
+SELECT table_name FROM user_tables;
+
+-- Check procedures
+SELECT object_name FROM user_procedures;
+
+-- Check packages
+SELECT object_name FROM user_packages;
+```
+
+## 📋 Database Schema
+
+### Tables
+
+#### 1. `user` Table
+```sql
+- id (NUMBER) - Primary Key
+- email (VARCHAR2) - User email
+- password (VARCHAR2) - Hashed password
+- created_at (TIMESTAMP) - Creation time
+- updated_at (TIMESTAMP) - Last update time
+```
+
+#### 2. `transaction` Table
+```sql
+- id (NUMBER) - Primary Key
+- user_id (NUMBER) - Foreign Key
+- amount (NUMBER) - Transaction amount
+- status (VARCHAR2) - Transaction status
+- created_at (TIMESTAMP) - Creation time
+- updated_at (TIMESTAMP) - Last update time
+```
+
+#### 3. `audit` Table
+```sql
+- audit_id (NUMBER) - Audit ID
+- table_name (VARCHAR2) - Modified table
+- operation (VARCHAR2) - INSERT/UPDATE/DELETE
+- operation_time (TIMESTAMP) - When it happened
+- user_name (VARCHAR2) - Who did it
+```
+
+## 🔄 CRUD Operations
+
+All operations through PL/SQL packages:
+
+```sql
+-- INSERT
+EXEC pkg_user_ops.insert_record('user@email.com', 'password', p_id);
+
+-- SELECT
+EXEC pkg_user_ops.get_record(1, p_cursor);
+
+-- UPDATE
+EXEC pkg_user_ops.update_record(1, 'newemail@email.com', 'newpass');
+
+-- DELETE
+EXEC pkg_user_ops.delete_record(1);
+```
+
+## 📊 Features
+
+✅ **Versioned Migrations** - All changes tracked with versions
+✅ **CRUD Procedures** - Stored procedures for all operations
+✅ **Audit Trail** - Automatic tracking of all changes
+✅ **Indexes** - Performance optimized with indexes
+✅ **Constraints** - Data integrity with constraints
+✅ **Triggers** - Automatic timestamp updates
+✅ **Error Handling** - Robust error handling in procedures
+
+## 🔒 Security Features
+
+- Parameterized queries (no SQL injection)
+- Stored procedures for controlled access
+- User privileges properly configured
+- Audit trail for compliance
+- Encryption-ready schema
+
+## 📈 Performance
+
+- Indexed frequently queried columns
+- Optimized table structure
+- Efficient CRUD procedures
+- Prepared for scaling
+
+## 🔄 Version History
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 001 | 2026-05-07 | Initial schema creation |
+| 002 | 2026-05-07 | Create all tables |
+| 003 | 2026-05-07 | Create CRUD procedures |
+
+## 📚 Documentation
+
+- **migrations/README.md** - Complete migration guide
+- **migrations/.migration_status** - Version tracking
+- **migrations/.executed_migrations** - Execution history
+
+## 🆘 Support
+
+For issues:
+1. Check **migrations/README.md** for troubleshooting
+2. Verify all migrations executed in order
+3. Check Oracle logs
+4. Review audit trail for errors
+
+## 🎯 Next Steps
+
+1. ✅ Review migration scripts
+2. 📥 Execute migrations in order
+3. 🧪 Test CRUD operations
+4. 🐙 Commit to GitHub
+5. 🔄 Create new migrations as needed
+
+---
+
+**Important**: Scripts are versioned and never auto-executed. Manual execution ensures safety! 🔐
 """
         readme_path.write_text(readme_content, encoding="utf-8")
         self.created_files.append(readme_path)
 
-        self.log_action(f"Database project structure created: {project_name}")
+        self.log_action(f"Database project structure created (versioned, not executed): {project_name}")
