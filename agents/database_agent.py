@@ -172,6 +172,9 @@ class DatabaseAgent(BaseAgent):
             performance_critical=spec.get("performance_critical", False),
         )
 
+        # Store business process name for code generation
+        subtask["business_process"] = business_process
+
         return [subtask]
 
     def clarify_task_description(self, task: Dict[str, Any]) -> Dict[str, Any]:
@@ -536,20 +539,19 @@ All code for this subtask has been generated in the main project folder:
     def _generate_subtask_migration(self, migrations_dir: Path, subtask: Dict[str, Any],
                                      schema_name: str) -> None:
         """Generate database migration scripts based on business process."""
-        # Extract business process from subtask title
-        title = subtask.get("title", "")
-        business_process = title.split(" - ")[0] if " - " in title else title
+        # Get business process from subtask dict
+        business_process = subtask.get("business_process", "")
         tables = subtask.get("tables", [])
 
-        if "User Management" in business_process:
+        if business_process == "User Management":
             self._generate_user_management_migration(migrations_dir, tables)
-        elif "Authentication" in business_process:
+        elif business_process == "Authentication & Authorization":
             self._generate_authentication_migration(migrations_dir, tables)
-        elif "Core Business Logic" in business_process:
+        elif business_process == "Core Business Logic":
             self._generate_core_logic_migration(migrations_dir, tables)
-        elif "API & Integration" in business_process:
+        elif business_process == "API & Integration":
             self._generate_api_integration_migration(migrations_dir, tables)
-        elif "Audit & Monitoring" in business_process:
+        elif business_process == "Audit & Monitoring":
             self._generate_audit_migration(migrations_dir, tables)
 
     def _generate_user_management_migration(self, migrations_dir: Path, tables: List[str]) -> None:

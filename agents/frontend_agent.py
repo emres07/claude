@@ -170,6 +170,9 @@ class FrontendAgent(BaseAgent):
             responsive=spec.get("responsive", True),
         )
 
+        # Store business process name for code generation
+        subtask["business_process"] = business_process
+
         return [subtask]
 
     def generate_project_structure(self, project_name: str, subtasks: List[Dict[str, Any]] = None) -> None:
@@ -237,19 +240,18 @@ class FrontendAgent(BaseAgent):
     def _generate_subtask_code(self, project_folder: Path, subtask: Dict[str, Any],
                                project_name: str) -> None:
         """Generate code specific to each business process."""
-        # Extract business process from subtask title
-        title = subtask.get("title", "")
-        business_process = title.split(" - ")[0] if " - " in title else title
+        # Get business process from subtask dict
+        business_process = subtask.get("business_process", "")
 
-        if "User Management" in business_process:
+        if business_process == "User Management":
             self._generate_user_management_components(project_folder)
-        elif "Authentication" in business_process:
+        elif business_process == "Authentication & Authorization":
             self._generate_authentication_components(project_folder)
-        elif "Core Business Logic" in business_process:
+        elif business_process == "Core Business Logic":
             self._generate_core_feature_components(project_folder)
-        elif "API & Integration" in business_process:
+        elif business_process == "API & Integration":
             self._generate_api_integration_components(project_folder)
-        elif "Audit & Monitoring" in business_process:
+        elif business_process == "Audit & Monitoring":
             self._generate_audit_components(project_folder)
 
     def _generate_user_management_components(self, project_folder: Path) -> None:
