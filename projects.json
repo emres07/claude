@@ -1,0 +1,32 @@
+[
+  {
+    "name": "User Authentication System",
+    "description": "Implement comprehensive user authentication with JWT tokens, password hashing, session management, and OAuth integration.",
+    "priority": "high",
+    "domains": ["backend", "frontend", "database"]
+  },
+  {
+    "name": "Payment Processing Integration",
+    "description": "Add Stripe payment integration with webhook support, transaction tracking, refund handling, and invoice generation.",
+    "priority": "high",
+    "domains": ["backend", "frontend", "database"]
+  },
+  {
+    "name": "Real-time Notifications System",
+    "description": "Implement WebSocket-based real-time notifications with database persistence and UI updates.",
+    "priority": "medium",
+    "domains": ["backend", "frontend", "database"]
+  },
+  {
+    "name": "Admin Dashboard",
+    "description": "Create a comprehensive admin dashboard with analytics, user management, and system monitoring.",
+    "priority": "medium",
+    "domains": ["backend", "frontend", "database"]
+  },
+  {
+    "name": "API Rate Limiting and Monitoring",
+    "description": "Implement API rate limiting, request throttling, and monitoring with Redis caching.",
+    "priority": "medium",
+    "domains": ["backend", "database"]
+  }
+]

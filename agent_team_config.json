@@ -3,7 +3,8 @@
     "name": "Multi-Domain Development Team",
     "description": "Agent team for managing tasks across backend, frontend, and database domains",
     "experimental": true,
-    "coordination_strategy": "sequential"
+    "coordination_strategy": "sequential",
+    "project_processing": true
   },
   "agents": [
     {
@@ -18,7 +19,8 @@
         "requirement_analysis"
       ],
       "output_folder": "tasks",
-      "priority": 1
+      "priority": 1,
+      "processes_projects": true
     },
     {
       "id": "backend_agent",
@@ -33,7 +35,8 @@
         "authentication_planning"
       ],
       "output_folder": "subtasks/backend",
-      "priority": 2
+      "priority": 2,
+      "processes_projects": true
     },
     {
       "id": "frontend_agent",
@@ -48,7 +51,8 @@
         "responsive_design"
       ],
       "output_folder": "subtasks/frontend",
-      "priority": 3
+      "priority": 3,
+      "processes_projects": true
     },
     {
       "id": "database_agent",
@@ -65,7 +69,8 @@
         "github_integration"
       ],
       "output_folder": "subtasks/database",
-      "priority": 4
+      "priority": 4,
+      "processes_projects": true
     }
   ],
   "collaboration": {
@@ -76,6 +81,25 @@
       "ambiguous_requirements",
       "missing_details",
       "conflicting_specifications"
+    ]
+  },
+  "projects": {
+    "enabled": true,
+    "input_format": "json",
+    "input_file": "projects.json",
+    "example_projects": [
+      {
+        "name": "User Authentication System",
+        "description": "Implement comprehensive user authentication with JWT tokens",
+        "priority": "high",
+        "domains": ["backend", "frontend", "database"]
+      },
+      {
+        "name": "Payment Processing",
+        "description": "Add Stripe payment integration",
+        "priority": "high",
+        "domains": ["backend", "frontend", "database"]
+      }
     ]
   },
   "github": {
