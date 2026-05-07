@@ -114,16 +114,34 @@ class DatabaseAgent(BaseAgent):
         subtasks = [
             self.create_database_subtask(
                 task_id=task_id,
-                title=f"Database Schema - {task_title}",
-                description="Design database schema and create migration",
-                tables=["main_table", "related_table"],
+                title=f"Database Setup & Schema Creation - {task_title}",
+                description="Create schema, tablespace, user, and initial setup",
+                tables=["schema_setup", "tablespace", "user_creation"],
             ),
             self.create_database_subtask(
                 task_id=task_id,
-                title=f"Query Optimization - {task_title}",
-                description="Optimize queries and create indexes",
-                indexes=["idx_primary", "idx_secondary"],
+                title=f"Create Core Tables - {task_title}",
+                description="Create user, task, and audit tables with constraints",
+                tables=["user", "task", "audit"],
+            ),
+            self.create_database_subtask(
+                task_id=task_id,
+                title=f"Create Indexes & Triggers - {task_title}",
+                description="Create indexes for performance and triggers for audit",
+                indexes=["idx_user_email", "idx_task_user", "idx_audit_time"],
                 performance_critical=True,
+            ),
+            self.create_database_subtask(
+                task_id=task_id,
+                title=f"Create Stored Procedures - {task_title}",
+                description="Create CRUD procedures and packages for all tables",
+                tables=["user", "task", "audit"],
+            ),
+            self.create_database_subtask(
+                task_id=task_id,
+                title=f"Setup Backup & Documentation - {task_title}",
+                description="Document schema, create backup strategy, and version control",
+                indexes=["backup_strategy", "documentation"],
             ),
         ]
 

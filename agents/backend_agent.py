@@ -111,16 +111,38 @@ class BackendAgent(BaseAgent):
         subtasks = [
             self.create_backend_subtask(
                 task_id=task_id,
-                title=f"Backend API Implementation - {task_title}",
-                description="Implement REST APIs with Spring Boot",
-                apis=["/api/v1/...", "/api/v1/.../detail"],
+                title=f"Setup Spring Boot Project - {task_title}",
+                description="Initialize Spring Boot 3.x project with Maven, dependencies, and configuration",
+                apis=["project initialization", "Maven configuration", "Application properties"],
+                auth_required=False,
+            ),
+            self.create_backend_subtask(
+                task_id=task_id,
+                title=f"Create Entities & Repositories - {task_title}",
+                description="Design JPA entities and create Spring Data JPA repositories",
+                db_schemas=["entity mapping", "repository interfaces", "custom queries"],
+                auth_required=False,
+            ),
+            self.create_backend_subtask(
+                task_id=task_id,
+                title=f"Implement Services & Business Logic - {task_title}",
+                description="Create service layer with business logic and transaction management",
+                apis=["business logic", "CRUD operations", "data validation"],
+                auth_required=False,
+            ),
+            self.create_backend_subtask(
+                task_id=task_id,
+                title=f"Build REST Controllers & APIs - {task_title}",
+                description="Implement REST controllers with proper endpoints and request handling",
+                apis=["/api/v1/users", "/api/v1/tasks", "/api/v1/audit"],
                 auth_required=True,
             ),
             self.create_backend_subtask(
                 task_id=task_id,
-                title=f"Database Schema & Hibernate Mapping - {task_title}",
-                description="Design schema and create Hibernate entities",
-                db_schemas=["users", "transactions"],
+                title=f"Add Security & Exception Handling - {task_title}",
+                description="Implement Spring Security, authentication, and global exception handling",
+                apis=["authentication", "authorization", "error handling"],
+                auth_required=True,
             ),
         ]
 
@@ -164,41 +186,51 @@ class BackendAgent(BaseAgent):
         )
         self.created_files.append(app_yml_path)
 
-        # Create sample entity
+        # Create entities for standard project entities
         entity_dir = project_folder / f"src/main/java/com/example/{base_package}/entity"
-        user_entity_path = entity_dir / "User.java"
-        user_entity_path.write_text(
-            BackendSkill.generate_entity_template("user"),
-            encoding="utf-8"
-        )
-        self.created_files.append(user_entity_path)
+        entities = ["user", "task", "audit"]
 
-        # Create sample repository
+        for entity in entities:
+            entity_path = entity_dir / f"{entity.title()}.java"
+            entity_path.write_text(
+                BackendSkill.generate_entity_template(entity),
+                encoding="utf-8"
+            )
+            self.created_files.append(entity_path)
+            self.log_action(f"Generated entity: {entity.title()}")
+
+        # Create repositories for all entities
         repo_dir = project_folder / f"src/main/java/com/example/{base_package}/repository"
-        user_repo_path = repo_dir / "UserRepository.java"
-        user_repo_path.write_text(
-            BackendSkill.generate_repository_template("user"),
-            encoding="utf-8"
-        )
-        self.created_files.append(user_repo_path)
+        for entity in entities:
+            repo_path = repo_dir / f"{entity.title()}Repository.java"
+            repo_path.write_text(
+                BackendSkill.generate_repository_template(entity),
+                encoding="utf-8"
+            )
+            self.created_files.append(repo_path)
+            self.log_action(f"Generated repository: {entity.title()}Repository")
 
-        # Create sample service
+        # Create services for all entities
         service_dir = project_folder / f"src/main/java/com/example/{base_package}/service"
-        user_service_path = service_dir / "UserService.java"
-        user_service_path.write_text(
-            BackendSkill.generate_service_template("user"),
-            encoding="utf-8"
-        )
-        self.created_files.append(user_service_path)
+        for entity in entities:
+            service_path = service_dir / f"{entity.title()}Service.java"
+            service_path.write_text(
+                BackendSkill.generate_service_template(entity),
+                encoding="utf-8"
+            )
+            self.created_files.append(service_path)
+            self.log_action(f"Generated service: {entity.title()}Service")
 
-        # Create sample controller
+        # Create controllers for all entities
         controller_dir = project_folder / f"src/main/java/com/example/{base_package}/controller"
-        user_controller_path = controller_dir / "UserController.java"
-        user_controller_path.write_text(
-            BackendSkill.generate_controller_template("user"),
-            encoding="utf-8"
-        )
-        self.created_files.append(user_controller_path)
+        for entity in entities:
+            controller_path = controller_dir / f"{entity.title()}Controller.java"
+            controller_path.write_text(
+                BackendSkill.generate_controller_template(entity),
+                encoding="utf-8"
+            )
+            self.created_files.append(controller_path)
+            self.log_action(f"Generated controller: {entity.title()}Controller")
 
         # Create setup script
         setup_script = project_folder / "setup.sh"

@@ -112,15 +112,38 @@ class FrontendAgent(BaseAgent):
         subtasks = [
             self.create_frontend_subtask(
                 task_id=task_id,
-                title=f"UI Components - {task_title}",
-                description="Build reusable UI components with React & TypeScript",
-                components=["Button", "Form", "Card", "Modal"],
+                title=f"Setup Next.js Project - {task_title}",
+                description="Initialize Next.js project with TypeScript, dependencies, and configuration",
+                components=["project setup", "tsconfig", "eslint config"],
+                responsive=True,
             ),
             self.create_frontend_subtask(
                 task_id=task_id,
-                title=f"Pages - {task_title}",
-                description="Implement feature pages with Next.js",
-                pages=["Dashboard", "Details", "Settings"],
+                title=f"Create Base Components - {task_title}",
+                description="Build reusable UI components (Button, Form, Card, Modal, Input)",
+                components=["Button", "Form", "Card", "Modal", "Input", "Table"],
+                responsive=True,
+            ),
+            self.create_frontend_subtask(
+                task_id=task_id,
+                title=f"Build Feature Components - {task_title}",
+                description="Create domain-specific components for main features",
+                components=["UserCard", "TaskList", "TaskForm", "AuditLog", "FilterBar"],
+                responsive=True,
+            ),
+            self.create_frontend_subtask(
+                task_id=task_id,
+                title=f"Implement Pages & Routing - {task_title}",
+                description="Create pages and setup Next.js routing",
+                pages=["Dashboard", "Users", "Tasks", "Settings", "Profile"],
+                responsive=True,
+            ),
+            self.create_frontend_subtask(
+                task_id=task_id,
+                title=f"API Integration & State Management - {task_title}",
+                description="Connect frontend to backend APIs and setup state management",
+                components=["API services", "React hooks", "Data fetching"],
+                responsive=True,
             ),
         ]
 
@@ -172,7 +195,7 @@ class FrontendAgent(BaseAgent):
         for dir_name in dirs:
             (project_folder / dir_name).mkdir(parents=True, exist_ok=True)
 
-        # Create sample files
+        # Create API service
         services_dir = project_folder / "src/services"
         api_service_path = services_dir / "api.service.ts"
         api_service_path.write_text(
@@ -180,15 +203,45 @@ class FrontendAgent(BaseAgent):
             encoding="utf-8"
         )
         self.created_files.append(api_service_path)
+        self.log_action("Generated API service")
 
-        # Create sample component
+        # Create base components
         components_dir = project_folder / "src/components"
-        button_path = components_dir / "Button.tsx"
-        button_path.write_text(
-            FrontendSkill.generate_component_template("button"),
-            encoding="utf-8"
-        )
-        self.created_files.append(button_path)
+        base_components = ["button", "form", "card", "modal", "input"]
+
+        for component in base_components:
+            component_path = components_dir / f"{component.title()}.tsx"
+            component_path.write_text(
+                FrontendSkill.generate_component_template(component),
+                encoding="utf-8"
+            )
+            self.created_files.append(component_path)
+            self.log_action(f"Generated component: {component.title()}")
+
+        # Create feature components
+        feature_components = ["UserCard", "TaskList", "TaskForm", "AuditLog"]
+
+        for component in feature_components:
+            component_path = components_dir / f"{component}.tsx"
+            component_path.write_text(
+                FrontendSkill.generate_component_template(component.lower()),
+                encoding="utf-8"
+            )
+            self.created_files.append(component_path)
+            self.log_action(f"Generated component: {component}")
+
+        # Create pages
+        pages_dir = project_folder / "src/pages"
+        pages = ["dashboard", "users", "tasks", "settings", "profile"]
+
+        for page in pages:
+            page_path = pages_dir / f"{page}.tsx"
+            page_path.write_text(
+                FrontendSkill.generate_page_template(page),
+                encoding="utf-8"
+            )
+            self.created_files.append(page_path)
+            self.log_action(f"Generated page: {page}")
 
         # Create setup script
         setup_script = project_folder / "setup.sh"
