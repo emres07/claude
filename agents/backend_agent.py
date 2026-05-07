@@ -4,8 +4,7 @@ from typing import Any, Dict, List
 from pathlib import Path
 
 from .base_agent import BaseAgent
-from skills.backend_skills import BackendSkill
-from skills.backend_skills_enhanced import EnhancedBackendSkill
+from skills.code_generator import DynamicCodeGenerator
 
 
 class BackendAgent(BaseAgent):
@@ -270,101 +269,47 @@ class BackendAgent(BaseAgent):
         return ""
 
     def _generate_code_from_spec(self, project_folder: Path, base_package: str, spec: Dict[str, Any]) -> None:
-        """Generate backend code based on parsed README specification."""
-        # Generate entities based on database schemas mentioned
-        tables = spec.get("tables", [])
-
+        """Generate backend code based on parsed specification."""
         entity_dir = project_folder / f"src/main/java/com/example/{base_package}/entity"
-        entity_dir.mkdir(parents=True, exist_ok=True)
-
-        # Generate User entity if tables mention users
-        if any("user" in table.lower() for table in tables):
-            user_entity_path = entity_dir / "User.java"
-            if not user_entity_path.exists():
-                user_entity_path.write_text(
-                    EnhancedBackendSkill.generate_user_entity_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(user_entity_path)
-                self.log_action("Generated entity: User (from spec)")
-
-        # Generate AuditLog entity if audit tables mentioned
-        if any("audit" in table.lower() for table in tables):
-            audit_entity_path = entity_dir / "AuditLog.java"
-            if not audit_entity_path.exists():
-                audit_entity_path.write_text(
-                    BackendSkill.generate_entity_template("audit"),
-                    encoding="utf-8"
-                )
-                self.created_files.append(audit_entity_path)
-                self.log_action("Generated entity: AuditLog (from spec)")
-
-        # Generate repositories
-        repo_dir = project_folder / f"src/main/java/com/example/{base_package}/repository"
-        repo_dir.mkdir(parents=True, exist_ok=True)
-
-        if any("user" in table.lower() for table in tables):
-            user_repo_path = repo_dir / "UserRepository.java"
-            if not user_repo_path.exists():
-                user_repo_path.write_text(
-                    BackendSkill.generate_repository_template("user"),
-                    encoding="utf-8"
-                )
-                self.created_files.append(user_repo_path)
-                self.log_action("Generated repository: UserRepository (from spec)")
-
-        # Generate services based on spec
         service_dir = project_folder / f"src/main/java/com/example/{base_package}/service"
-        service_dir.mkdir(parents=True, exist_ok=True)
-
-        if any("user" in table.lower() for table in tables):
-            user_service_path = service_dir / "UserService.java"
-            if not user_service_path.exists():
-                user_service_path.write_text(
-                    EnhancedBackendSkill.generate_user_service_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(user_service_path)
-                self.log_action("Generated service: UserService (from spec)")
-
-        if any("audit" in table.lower() for table in tables):
-            audit_service_path = service_dir / "AuditService.java"
-            if not audit_service_path.exists():
-                audit_service_path.write_text(
-                    EnhancedBackendSkill.generate_audit_service_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(audit_service_path)
-                self.log_action("Generated service: AuditService (from spec)")
-
-        # Generate controllers based on APIs
         controller_dir = project_folder / f"src/main/java/com/example/{base_package}/controller"
+
+        entity_dir.mkdir(parents=True, exist_ok=True)
+        service_dir.mkdir(parents=True, exist_ok=True)
         controller_dir.mkdir(parents=True, exist_ok=True)
 
-        apis = spec.get("apis", [])
-        if any("/users" in api for api in apis):
-            user_controller_path = controller_dir / "UserController.java"
-            if not user_controller_path.exists():
-                user_controller_path.write_text(
-                    EnhancedBackendSkill.generate_user_controller_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(user_controller_path)
-                self.log_action("Generated controller: UserController (from spec)")
+        description = spec.get("description", "").lower()
 
-        # Generate security utilities if authentication mentioned
-        if any("/auth" in api for api in apis) or any("auth" in spec.get("description", "").lower()):
-            util_dir = project_folder / f"src/main/java/com/example/{base_package}/security"
-            util_dir.mkdir(parents=True, exist_ok=True)
+        # Generate User entity if user-related
+        if "user" in description:
+            user_entity = DynamicCodeGenerator.generate_java_entity(spec, "User")
+            entity_path = entity_dir / "User.java"
+            entity_path.write_text(user_entity, encoding="utf-8")
+            self.log_action("Generated: User.java")
 
-            jwt_util_path = util_dir / "JwtTokenProvider.java"
-            if not jwt_util_path.exists():
-                jwt_util_path.write_text(
-                    EnhancedBackendSkill.generate_jwt_util_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(jwt_util_path)
-                self.log_action("Generated security: JwtTokenProvider (from spec)")
+            # Generate UserService
+            user_service = DynamicCodeGenerator.generate_java_service(spec, "UserService")
+            service_path = service_dir / "UserService.java"
+            service_path.write_text(user_service, encoding="utf-8")
+            self.log_action("Generated: UserService.java")
+
+            # Generate UserController
+            user_controller = DynamicCodeGenerator.generate_java_controller(spec, "UserController")
+            controller_path = controller_dir / "UserController.java"
+            controller_path.write_text(user_controller, encoding="utf-8")
+            self.log_action("Generated: UserController.java")
+
+        # Generate Audit service if audit-related
+        if "audit" in description:
+            audit_entity = DynamicCodeGenerator.generate_java_entity(spec, "AuditLog")
+            entity_path = entity_dir / "AuditLog.java"
+            entity_path.write_text(audit_entity, encoding="utf-8")
+            self.log_action("Generated: AuditLog.java")
+
+            audit_service = DynamicCodeGenerator.generate_java_service(spec, "AuditService")
+            service_path = service_dir / "AuditService.java"
+            service_path.write_text(audit_service, encoding="utf-8")
+            self.log_action("Generated: AuditService.java")
 
     def _generate_code_by_business_process(self, project_folder: Path, base_package: str, business_process: str) -> None:
         """Fallback: Generate code based on business process type."""

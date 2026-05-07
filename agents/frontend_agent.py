@@ -4,8 +4,7 @@ from typing import Any, Dict, List
 from pathlib import Path
 
 from .base_agent import BaseAgent
-from skills.frontend_skills import FrontendSkill
-from skills.frontend_skills_enhanced import EnhancedFrontendSkill
+from skills.code_generator import DynamicCodeGenerator
 
 
 class FrontendAgent(BaseAgent):
@@ -277,68 +276,44 @@ class FrontendAgent(BaseAgent):
         return ""
 
     def _generate_code_from_spec(self, project_folder: Path, spec: Dict[str, Any]) -> None:
-        """Generate frontend code based on parsed README specification."""
+        """Generate frontend code based on parsed specification."""
         components_dir = project_folder / "src/components"
-        components_dir.mkdir(parents=True, exist_ok=True)
-
         pages_dir = project_folder / "src/pages"
-        pages_dir.mkdir(parents=True, exist_ok=True)
-
         services_dir = project_folder / "src/services"
+
+        components_dir.mkdir(parents=True, exist_ok=True)
+        pages_dir.mkdir(parents=True, exist_ok=True)
         services_dir.mkdir(parents=True, exist_ok=True)
 
-        # Generate LoginForm if authentication mentioned
-        if any("/login" in api.lower() or "auth" in api.lower() for api in spec.get("apis", [])):
-            login_form_path = components_dir / "LoginForm.tsx"
-            if not login_form_path.exists():
-                login_form_path.write_text(
-                    EnhancedFrontendSkill.generate_login_component_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(login_form_path)
-                self.log_action("Generated component: LoginForm (from spec)")
+        description = spec.get("description", "").lower()
 
-        # Generate API service
-        api_service_path = services_dir / "api.service.ts"
-        if not api_service_path.exists():
-            api_service_path.write_text(
-                EnhancedFrontendSkill.generate_api_service_from_spec(spec),
-                encoding="utf-8"
-            )
-            self.created_files.append(api_service_path)
-            self.log_action("Generated service: ApiService (from spec)")
+        # Generate LoginForm for authentication
+        if "login" in description or "auth" in description:
+            login_code = DynamicCodeGenerator.generate_react_component(spec, "LoginForm")
+            login_path = components_dir / "LoginForm.tsx"
+            login_path.write_text(login_code, encoding="utf-8")
+            self.log_action("Generated: LoginForm.tsx")
 
-        # Generate UserList if user management mentioned
-        if any("/users" in api for api in spec.get("apis", [])):
-            user_list_path = components_dir / "UserList.tsx"
-            if not user_list_path.exists():
-                user_list_path.write_text(
-                    EnhancedFrontendSkill.generate_user_list_component_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(user_list_path)
-                self.log_action("Generated component: UserList (from spec)")
+        # Generate UserList for user management
+        if "user" in description and "list" in description:
+            userlist_code = DynamicCodeGenerator.generate_react_component(spec, "UserList")
+            userlist_path = components_dir / "UserList.tsx"
+            userlist_path.write_text(userlist_code, encoding="utf-8")
+            self.log_action("Generated: UserList.tsx")
 
         # Generate Dashboard page
-        dashboard_path = pages_dir / "dashboard.tsx"
-        if not dashboard_path.exists():
-            dashboard_path.write_text(
-                EnhancedFrontendSkill.generate_dashboard_page_from_spec(spec),
-                encoding="utf-8"
-            )
-            self.created_files.append(dashboard_path)
-            self.log_action("Generated page: Dashboard (from spec)")
+        if "dashboard" in description:
+            dashboard_code = DynamicCodeGenerator.generate_react_component(spec, "Dashboard")
+            dashboard_path = pages_dir / "dashboard.tsx"
+            dashboard_path.write_text(dashboard_code, encoding="utf-8")
+            self.log_action("Generated: dashboard.tsx")
 
-        # Generate registration page if registration mentioned
-        if any("register" in api.lower() for api in spec.get("apis", [])):
-            register_path = pages_dir / "register.tsx"
-            if not register_path.exists():
-                register_path.write_text(
-                    EnhancedFrontendSkill.generate_user_registration_page_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(register_path)
-                self.log_action("Generated page: Registration (from spec)")
+        # Generate generic component/page for other cases
+        if not description:
+            generic_code = DynamicCodeGenerator.generate_react_component(spec, "Component")
+            component_path = components_dir / "Component.tsx"
+            component_path.write_text(generic_code, encoding="utf-8")
+            self.log_action("Generated: Component.tsx")
 
     def _generate_code_by_business_process(self, project_folder: Path, business_process: str) -> None:
         """Fallback: Generate code based on business process type."""

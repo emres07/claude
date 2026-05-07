@@ -5,8 +5,7 @@ import json
 from pathlib import Path
 
 from .base_agent import BaseAgent
-from skills.database_skills import DatabaseSkill
-from skills.database_skills_enhanced import EnhancedDatabaseSkill
+from skills.code_generator import DynamicCodeGenerator
 
 
 class DatabaseAgent(BaseAgent):
@@ -574,79 +573,38 @@ All code for this subtask has been generated in the main project folder:
         return ""
 
     def _generate_migration_from_spec(self, migrations_dir: Path, spec: Dict[str, Any]) -> None:
-        """Generate database migrations based on parsed README specification."""
+        """Generate database migrations based on parsed specification."""
         tables = spec.get("tables", [])
         version = self._get_next_migration_version(migrations_dir)
+        description = spec.get("description", "").lower()
 
-        # Generate User migration if users table mentioned
-        if any("user" in table.lower() for table in tables):
-            user_migration_path = migrations_dir / f"V{version:03d}_create_users_table.sql"
-            if not user_migration_path.exists():
-                user_migration_path.write_text(
-                    EnhancedDatabaseSkill.generate_user_migration_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(user_migration_path)
-                self.log_action(f"Generated migration: V{version:03d} Users table (from spec)")
-                version += 1
+        # Generate appropriate migrations based on description
+        if "user" in description:
+            migration_sql = DynamicCodeGenerator.generate_sql_migration(spec, version, "users")
+            migration_path = migrations_dir / f"V{version:03d}_create_users_table.sql"
+            migration_path.write_text(migration_sql, encoding="utf-8")
+            self.log_action(f"Generated: V{version:03d}_create_users_table.sql")
+            version += 1
 
-        # Generate Audit Logs migration
-        if any("audit" in table.lower() for table in tables):
-            audit_migration_path = migrations_dir / f"V{version:03d}_create_audit_logs_table.sql"
-            if not audit_migration_path.exists():
-                audit_migration_path.write_text(
-                    EnhancedDatabaseSkill.generate_audit_logs_migration_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(audit_migration_path)
-                self.log_action(f"Generated migration: V{version:03d} Audit Logs table (from spec)")
-                version += 1
+        if "audit" in description:
+            migration_sql = DynamicCodeGenerator.generate_sql_migration(spec, version, "audit_logs")
+            migration_path = migrations_dir / f"V{version:03d}_create_audit_logs_table.sql"
+            migration_path.write_text(migration_sql, encoding="utf-8")
+            self.log_action(f"Generated: V{version:03d}_create_audit_logs_table.sql")
+            version += 1
 
-        # Generate Activity Logs migration
-        if any("activity" in table.lower() for table in tables):
-            activity_migration_path = migrations_dir / f"V{version:03d}_create_activity_logs_table.sql"
-            if not activity_migration_path.exists():
-                activity_migration_path.write_text(
-                    EnhancedDatabaseSkill.generate_activity_logs_migration_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(activity_migration_path)
-                self.log_action(f"Generated migration: V{version:03d} Activity Logs table (from spec)")
-                version += 1
+        if "session" in description:
+            migration_sql = DynamicCodeGenerator.generate_sql_migration(spec, version, "sessions")
+            migration_path = migrations_dir / f"V{version:03d}_create_sessions_table.sql"
+            migration_path.write_text(migration_sql, encoding="utf-8")
+            self.log_action(f"Generated: V{version:03d}_create_sessions_table.sql")
+            version += 1
 
-        # Generate Sessions migration
-        if any("session" in table.lower() for table in tables):
-            sessions_migration_path = migrations_dir / f"V{version:03d}_create_sessions_table.sql"
-            if not sessions_migration_path.exists():
-                sessions_migration_path.write_text(
-                    EnhancedDatabaseSkill.generate_sessions_migration_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(sessions_migration_path)
-                self.log_action(f"Generated migration: V{version:03d} Sessions table (from spec)")
-                version += 1
-
-        # Generate Integration tables migration
-        if any("integration" in table.lower() for table in tables):
-            integration_migration_path = migrations_dir / f"V{version:03d}_create_integration_tables.sql"
-            if not integration_migration_path.exists():
-                integration_migration_path.write_text(
-                    EnhancedDatabaseSkill.generate_integration_tables_migration_from_spec(spec),
-                    encoding="utf-8"
-                )
-                self.created_files.append(integration_migration_path)
-                self.log_action(f"Generated migration: V{version:03d} Integration tables (from spec)")
-                version += 1
-
-        # Generate seed data and rollback scripts
-        seed_path = migrations_dir / f"V{version:03d}_seed_data.sql"
-        if not seed_path.exists():
-            seed_path.write_text(
-                EnhancedDatabaseSkill.generate_seed_data_from_spec(spec),
-                encoding="utf-8"
-            )
-            self.created_files.append(seed_path)
-            self.log_action(f"Generated migration: V{version:03d} Seed data (from spec)")
+        if "integration" in description:
+            migration_sql = DynamicCodeGenerator.generate_sql_migration(spec, version, "integrations")
+            migration_path = migrations_dir / f"V{version:03d}_create_integrations_table.sql"
+            migration_path.write_text(migration_sql, encoding="utf-8")
+            self.log_action(f"Generated: V{version:03d}_create_integrations_table.sql")
 
     def _get_next_migration_version(self, migrations_dir: Path) -> int:
         """Get the next migration version number."""
