@@ -1,7 +1,7 @@
 [
   {
-    "name": "CALENDAR APP",
-    "description": "Implement calendar application to manage meeting at a clinic with add, edit, delete, and mark complete functionalities for calendar app.",
+    "name": "TODO LIST APP",
+    "description": "Implement todo list application with add, edit, delete, and mark complete functionalities.",
     "priority": "high",
     "domains": ["backend", "frontend", "database"],
     "workflows": [

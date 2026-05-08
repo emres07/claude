@@ -1,0 +1,55 @@
+# Database Schema for User Authentication & Authorization Workflow - User Authentication & Authorization Workflow - TODO LIST APP
+
+## Subtask #1
+
+### Description
+Implement database schema for User Authentication & Authorization Workflow workflow.
+
+Workflow Steps:
+1. User navigates to login page
+2. User enters credentials
+3. System validates credentials against database
+4. System generates JWT token if valid
+5. User is granted access based on role
+6. System restricts access to appropriate features
+
+Data entities to persist: User, Role, Permission, Token
+
+### What Was Generated
+All code for this subtask has been generated in the main project folder:
+- `migrations/` - SQL migration scripts (versioned)
+- `.migration_status` - Version tracking (JSON)
+- `README.md` - Migration documentation
+
+### Tables Generated
+- user
+- role
+- permission
+- token
+
+### Indexes Generated
+- idx_user_id
+- idx_role_id
+- idx_permission_id
+- idx_token_id
+
+### Acceptance Criteria
+- [x] Code generated automatically
+- [ ] Migrations tested in development
+- [ ] Migrations executed in order
+- [ ] Backup strategy implemented
+- [ ] Code reviewed
+
+### Next Steps
+1. Review generated scripts in main project folder
+2. Test migrations in development environment
+3. Execute migrations in order (001 → 002 → 003)
+4. Verify all tables and procedures created
+5. Test CRUD operations
+6. Commit to version control
+
+### Files to Review
+- All SQL files follow Oracle best practices
+- Migration scripts are versioned and safe (not auto-executed)
+- Stored procedures include error handling
+- Tables include proper constraints and indexes
